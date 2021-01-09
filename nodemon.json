@@ -1,0 +1,7 @@
+{
+  "verbose": true,
+  "watch": ["src/**/*.ts", "src/**/*.js"],
+  "execMap": {
+    "ts": "ts-node -r dotenv/config"
+  }
+}
