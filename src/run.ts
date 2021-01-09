@@ -17,18 +17,16 @@ bot.use(async (_, next) => {
 
 bot.on('new_chat_members', (ctx) => {
   const groupId = ctx.chat?.id
-  console.log(groupId)
   if (!groupId) {
     return
   }
 
   ctx.message?.new_chat_members
     ?.filter((m) => !m.is_bot)
-    .forEach((member) => {
-      console.log(member)
-      const username = member.username
-        ? `@${member.username.replace(/_/g, '\\_')}`
-        : `[${member.last_name} ${member.first_name}](tg://user?id=${member.id})`
+    .forEach((m) => {
+      const username = m.username
+        ? `@${m.username.replace(/_/g, '\\_')}`
+        : `[${m.last_name} ${m.first_name}](tg://user?id=${m.id})`
       const msg = welcom.replace('{username}', username)
       ctx.telegram.sendMessage(groupId, msg, { parse_mode: 'MarkdownV2' })
     })
