@@ -9,7 +9,6 @@
     "lib": ["dom", "es2019"],
     "module": "commonjs",
     "moduleResolution": "node",
-    "noEmit": true,
     "noFallthroughCasesInSwitch": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
@@ -19,6 +18,7 @@
     "target": "esnext",
     "baseUrl": ".",
     "typeRoots": ["./node_modules/@types", "./src/types"],
+    "outDir": "dist",
     "paths": {
       "@/*": ["./src/*"]
     }
