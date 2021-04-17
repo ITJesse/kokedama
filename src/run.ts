@@ -15,6 +15,17 @@ bot.use(async (_, next) => {
   console.log('Response time: %sms', ms)
 })
 
+bot.command('info', (ctx) => {
+  const groupId = ctx.chat?.id
+  if (!groupId) {
+    return
+  }
+
+  const from = ctx.update.message?.from
+  const msg = `Group ID: ${groupId}\nUser ID: ${from?.id}`
+  ctx.telegram.sendMessage(groupId, msg)
+})
+
 bot.on('new_chat_members', (ctx) => {
   const groupId = ctx.chat?.id
   if (!groupId) {
@@ -35,5 +46,9 @@ bot.launch()
 console.log('Bot started.')
 
 // Enable graceful stop
-process.once('SIGINT', () => bot.stop())
-process.once('SIGTERM', () => bot.stop())
+const stop = async () => {
+  await bot.stop()
+  process.exit()
+}
+process.once('SIGINT', stop)
+process.once('SIGTERM', stop)
