@@ -203,6 +203,12 @@ bot.on('callback_query', async (ctx) => {
                     ],
                   ]
                 : []),
+              [
+                {
+                  text: `获取全部原图（共${images.length}张）`,
+                  callback_data: `download_tweet_all|${tweetId}|${params[1]}`,
+                },
+              ],
               ...inlineKeyboard.inline_keyboard,
             ],
           },
@@ -225,6 +231,26 @@ bot.on('callback_query', async (ctx) => {
           groupId,
           images.map((e: any) => ({
             type: 'photo',
+            media: e,
+          })),
+          {
+            disable_notification: true,
+          },
+        )
+      }
+      break
+    }
+    case 'download_tweet_all': {
+      const tweetId = params[0]
+      const tweet = await getTweetById(tweetId)
+      const images = tweet.includes.media?.map((e: any) => getOrigImgUrl(e.url))
+      if (!images) {
+        return
+      } else {
+        ctx.tg.sendMediaGroup(
+          groupId,
+          images.map((e: any) => ({
+            type: 'document',
             media: e,
           })),
           {
