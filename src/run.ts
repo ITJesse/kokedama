@@ -87,7 +87,7 @@ bot.on('message', async (ctx) => {
       // const tweet = await getTweetById(tweetId)
       const msg = await ctx.telegram.sendMessage(
         groupId,
-        '发现 Twitter 链接，是否预览？',
+        '发现 Twitter 链接，请选择操作：',
         {
           reply_to_message_id: ctx.update.message?.message_id,
           parse_mode: 'MarkdownV2',
@@ -96,11 +96,11 @@ bot.on('message', async (ctx) => {
               [
                 {
                   text: '显示预览',
-                  callback_data: `preview_tweet|${tweetId},${ctx.update.message?.message_id}`,
+                  callback_data: `preview_tweet|${tweetId}`,
                 },
                 {
-                  text: '取消',
-                  callback_data: `cancel_and_remove`,
+                  text: '下载原图',
+                  callback_data: `download_tweet_all|${tweetId}`,
                 },
               ],
             ],
@@ -159,8 +159,8 @@ bot.on('callback_query', async (ctx) => {
     case 'preview_tweet': {
       const tweetId = params[0]
       const tweet = await getTweetById(tweetId)
-      const images = tweet.includes.media?.map((e: any) =>
-        getOrigImgUrl(e.url ?? e.preview_image_url),
+      const images = tweet.includes.media?.map(
+        (e: any) => e.url ?? e.preview_image_url,
       )
       const content = `${tweet.data.text}`
       const inlineKeyboard: InlineKeyboardMarkup = {
@@ -170,8 +170,6 @@ bot.on('callback_query', async (ctx) => {
               text: `作者：${tweet.includes.users[0].name}`,
               url: getUserUrl(tweet.includes.users[0].username),
             },
-          ],
-          [
             {
               text: '原文链接',
               url: getTweetUrl(tweet.includes.users[0].username, tweetId),
@@ -200,20 +198,18 @@ bot.on('callback_query', async (ctx) => {
             reply_to_message_id: parseInt(params[1]),
             reply_markup: {
               inline_keyboard: [
-                ...(images.length > 1
-                  ? [
-                      [
-                        {
-                          text: `获取全部图片预览（共${images.length}张）`,
-                          callback_data: `preview_tweet_all|${tweetId}|${params[1]}`,
-                        },
-                      ],
-                    ]
-                  : []),
                 [
+                  ...(images.length > 1
+                    ? [
+                        {
+                          text: `全部预览（共${images.length}张）`,
+                          callback_data: `preview_tweet_all|${tweetId},${params[1]}`,
+                        },
+                      ]
+                    : []),
                   {
-                    text: `获取全部原图（共${images.length}张）`,
-                    callback_data: `download_tweet_all|${tweetId}|${params[1]}`,
+                    text: `下载原图（共${images.length}张）`,
+                    callback_data: `download_tweet_all|${tweetId},${params[1]}`,
                   },
                 ],
                 ...inlineKeyboard.inline_keyboard,
@@ -222,24 +218,27 @@ bot.on('callback_query', async (ctx) => {
           },
         )
       }
-      ctx.tg.deleteMessage(
-        groupId,
-        ctx.update.callback_query?.message?.message_id ?? 0,
-      )
       break
     }
     case 'preview_tweet_all': {
       const tweetId = params[0]
       const tweet = await getTweetById(tweetId)
-      const images = tweet.includes.media?.map((e: any) => getOrigImgUrl(e.url))
+      const images = tweet.includes.media?.map((e: any) => e.url)
       if (!images) {
         return
       } else {
+        const imageBufs: Buffer[] = await Promise.all(
+          images.map((e: any) =>
+            axios
+              .get(e, { responseType: 'arraybuffer' })
+              .then(({ data }) => Buffer.from(data)),
+          ),
+        )
         ctx.tg.sendMediaGroup(
           groupId,
-          images.map((e: any) => ({
+          imageBufs.map((e) => ({
             type: 'photo',
-            media: e,
+            media: { source: e },
           })),
           {
             disable_notification: true,
@@ -255,11 +254,18 @@ bot.on('callback_query', async (ctx) => {
       if (!images) {
         return
       } else {
+        const imageBufs: Buffer[] = await Promise.all(
+          images.map((e: any) =>
+            axios
+              .get(e, { responseType: 'arraybuffer' })
+              .then(({ data }) => Buffer.from(data)),
+          ),
+        )
         ctx.tg.sendMediaGroup(
           groupId,
-          images.map((e: any) => ({
+          imageBufs.map((e, i) => ({
             type: 'document',
-            media: e,
+            media: { filename: `${i + 1}.jpg`, source: e },
           })),
           {
             disable_notification: true,
