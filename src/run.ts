@@ -1,3 +1,4 @@
+import axios from 'axios'
 import fs from 'fs'
 import path from 'path'
 import Telegraf from 'telegraf'
@@ -186,33 +187,40 @@ bot.on('callback_query', async (ctx) => {
           disable_notification: true,
         })
       } else {
-        ctx.tg.sendPhoto(groupId, images[0], {
-          caption: content,
-          parse_mode: 'HTML',
-          disable_notification: true,
-          reply_to_message_id: parseInt(params[1]),
-          reply_markup: {
-            inline_keyboard: [
-              ...(images.length > 1
-                ? [
-                    [
-                      {
-                        text: `获取全部图片预览（共${images.length}张）`,
-                        callback_data: `preview_tweet_all|${tweetId}|${params[1]}`,
-                      },
-                    ],
-                  ]
-                : []),
-              [
-                {
-                  text: `获取全部原图（共${images.length}张）`,
-                  callback_data: `download_tweet_all|${tweetId}|${params[1]}`,
-                },
-              ],
-              ...inlineKeyboard.inline_keyboard,
-            ],
-          },
+        const { data } = await axios.get(images[0], {
+          responseType: 'arraybuffer',
         })
+        ctx.tg.sendPhoto(
+          groupId,
+          { source: Buffer.from(data) },
+          {
+            caption: content,
+            parse_mode: 'HTML',
+            disable_notification: true,
+            reply_to_message_id: parseInt(params[1]),
+            reply_markup: {
+              inline_keyboard: [
+                ...(images.length > 1
+                  ? [
+                      [
+                        {
+                          text: `获取全部图片预览（共${images.length}张）`,
+                          callback_data: `preview_tweet_all|${tweetId}|${params[1]}`,
+                        },
+                      ],
+                    ]
+                  : []),
+                [
+                  {
+                    text: `获取全部原图（共${images.length}张）`,
+                    callback_data: `download_tweet_all|${tweetId}|${params[1]}`,
+                  },
+                ],
+                ...inlineKeyboard.inline_keyboard,
+              ],
+            },
+          },
+        )
       }
       ctx.tg.deleteMessage(
         groupId,
