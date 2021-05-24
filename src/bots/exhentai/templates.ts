@@ -1,6 +1,6 @@
 import dayjs from 'dayjs'
 import { GalleryMeta } from './types'
-import { tagUrl, translateTag } from './utils'
+import { tagUrl, translateCategory, translateTag } from './utils'
 
 export const galleryMetaTemplate = (meta: GalleryMeta) => {
   const language = (() => {
@@ -23,14 +23,15 @@ export const galleryMetaTemplate = (meta: GalleryMeta) => {
 
   const rows = [
     `上传者: ${meta.uploader}`,
+    `分类: ${translateCategory(meta.category)}`,
     `发布时间: ${dayjs(parseInt(meta.posted) * 1000).format(
       'YYYY-MM-DD HH:mm',
     )}`,
-    `${language ? language : null}`,
+    language,
     `页数: ${meta.filecount}`,
     `评分: ${meta.rating}`,
     `里站限定: ${meta.expunged ? '是' : '否'}`,
-    `标签: ${tags.join(' ')}`,
+    tags.length > 0 ? `标签: ${tags.join(' ')}` : null,
   ].filter((e) => !!e)
 
   return `<b>E-Hentai</b>

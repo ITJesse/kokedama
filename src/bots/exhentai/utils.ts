@@ -4,17 +4,19 @@ import path from 'path'
 
 import { GalleryMetaResponse } from './types'
 
+const exhentaiApi = axios.create({
+  baseURL: 'https://exhentai.org',
+  headers: {
+    Cookie: process.env.EXHENTAI_COOKIES,
+  },
+})
+
 const tags = JSON.parse(
   fs.readFileSync(path.resolve(__dirname, './data/tags.json')).toString(),
 )
 
-axios.defaults.baseURL = 'https://exhentai.org'
-axios.defaults.headers = {
-  Cookie: process.env.EXHENTAI_COOKIES,
-}
-
 export const getGalleryMeta = async (gid: number, gtoken: string) => {
-  const { data } = await axios.post<GalleryMetaResponse>('/api.php', {
+  const { data } = await exhentaiApi.post<GalleryMetaResponse>('/api.php', {
     method: 'gdata',
     gidlist: [[gid, gtoken]],
     namespace: 1,
@@ -55,8 +57,14 @@ export const translateTag = (tag: string, checkMisc = false): string[] => {
   return text
 }
 
+export const translateCategory = (category: string): string => {
+  const translate = tags.data.find((e: any) => e.namespace === 'reclass')
+  if (!translate) return ''
+  return translate.data[category.toLowerCase().split(' ').join('')]?.name ?? ''
+}
+
 export const galleryUrl = (gid: number, gtoken: string, expunged = false) =>
   `https://e${expunged ? 'x' : '-'}hentai.org/g/${gid}/${gtoken}/`
 
 export const tagUrl = (tag: string, expunged = false) =>
-  `https://e${expunged ? 'x' : '-'}hhentai.org/tag/${tag.split(' ').join('+')}`
+  `https://e${expunged ? 'x' : '-'}hentai.org/tag/${tag.split(' ').join('+')}`
