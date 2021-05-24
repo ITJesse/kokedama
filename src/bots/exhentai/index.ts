@@ -1,4 +1,3 @@
-import FormData from 'form-data'
 import fs from 'fs'
 import path from 'path'
 import { Markup, Telegraf } from 'telegraf'
@@ -91,15 +90,9 @@ export default function exhentaiBot(bot: Telegraf) {
       case 'exhentai_download': {
         const [gid, gtoken] = params
         const meta = await getGalleryMeta(parseInt(gid), gtoken)
-        const body = new FormData()
-        body.append('hathdl_xres', 'org')
-        await exhentaiApi.post('https://exhentai.org/archiver.php', body, {
-          params: {
-            gid,
-            token: gtoken,
-            or: meta.archiver_key,
-          },
-          headers: { 'Content-Type': 'multipart/form-data' },
+        const url = `https://exhentai.org/archiver.php?gid=${gid}&token=${gtoken}&or=${meta.archiver_key}`
+        await exhentaiApi.post(url, 'hathdl_xres=org', {
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         })
         const msg = await ctx.tg.sendMessage(
           groupId,
@@ -187,5 +180,6 @@ export default function exhentaiBot(bot: Telegraf) {
     await delay(5000)
     await task()
   }
-  task()
+
+  task().catch(() => task())
 }

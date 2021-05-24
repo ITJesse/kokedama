@@ -15,7 +15,6 @@
     "axios": "^0.21.1",
     "dayjs": "^1.10.4",
     "dotenv": "^8.2.0",
-    "form-data": "^4.0.0",
     "node-7z": "^2.1.2",
     "node-telegram-bot-api": "^0.51.0",
     "redis": "^3.1.1",
