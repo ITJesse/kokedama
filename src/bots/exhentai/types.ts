@@ -32,3 +32,9 @@ export type GalleryMetaResponse = {
 export type GalleryTokenResponse = {
   tokenlist: { gid: number; token: string }[]
 }
+
+export type DownloadTaskPayload = {
+  groupId: number
+  msgId: number
+  meta: GalleryMeta
+}

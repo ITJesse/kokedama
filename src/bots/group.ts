@@ -2,9 +2,9 @@ import fs from 'fs'
 import path from 'path'
 import { Telegraf } from 'telegraf'
 
+import { GROUP_MEMBER_PREFIX } from '../utils/conts'
 import * as redis from '../utils/redis'
 
-const GROUP_MEMBER_PREFIX = 'TELEGRAM_GROUP_MEMBERS_'
 const welcom = fs
   .readFileSync(path.resolve(__dirname, '../../templates/welcome.txt'))
   .toString()

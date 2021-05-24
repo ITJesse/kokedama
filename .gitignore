@@ -3,3 +3,4 @@ dist
 templates/*.txt
 .env
 .DS_Store
+disk

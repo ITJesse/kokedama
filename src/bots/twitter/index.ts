@@ -54,7 +54,6 @@ export default function twitterBot(bot: Telegraf) {
     }
     const cmd = data.split('|')[0]
     const params = data.split('|')[1]?.split(',')
-    console.log(cmd, params)
 
     switch (cmd) {
       case 'preview_tweet': {
