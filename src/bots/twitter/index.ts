@@ -7,22 +7,32 @@ export default function twitterBot(bot: Telegraf) {
   bot.hears(
     /https:\/\/twitter\.com\/(\w+)\/status\/(\d+)/,
     async (ctx, next) => {
-      if (ctx.match) {
+      const groupId = ctx.update.message.chat.id
+      const messageId = ctx.update.message.message_id
+      if (ctx.match && groupId) {
         const tweetId = ctx.match[2]
         // const tweet = await getTweetById(tweetId)
-        const msg = await ctx.reply('发现 Twitter 链接，请选择操作：', {
-          reply_to_message_id: ctx.update.message?.message_id,
-          parse_mode: 'MarkdownV2',
-          reply_markup: Markup.inlineKeyboard([
-            [
-              Markup.button.callback('显示预览', `preview_tweet|${tweetId}`),
-              Markup.button.callback(
-                '下载原图',
-                `download_tweet_all|${tweetId}`,
-              ),
-            ],
-          ]).reply_markup,
-        })
+        const msg = await ctx.tg.sendMessage(
+          groupId,
+          '发现 Twitter 链接，请选择操作：',
+          {
+            disable_notification: true,
+            reply_to_message_id: messageId,
+            parse_mode: 'MarkdownV2',
+            reply_markup: Markup.inlineKeyboard([
+              [
+                Markup.button.callback(
+                  '显示预览',
+                  `preview_tweet|${tweetId},${messageId}`,
+                ),
+                Markup.button.callback(
+                  '下载原图',
+                  `download_tweet_all|${tweetId},${messageId}`,
+                ),
+              ],
+            ]).reply_markup,
+          },
+        )
         setTimeout(async () => {
           try {
             await ctx.tg.deleteMessage(msg.chat.id, msg.message_id)
@@ -44,6 +54,8 @@ export default function twitterBot(bot: Telegraf) {
     }
     const cmd = data.split('|')[0]
     const params = data.split('|')[1]?.split(',')
+    console.log(cmd, params)
+
     switch (cmd) {
       case 'preview_tweet': {
         const tweetId = params[0]
@@ -56,6 +68,7 @@ export default function twitterBot(bot: Telegraf) {
           ctx.tg.sendMessage(groupId, content, {
             parse_mode: 'HTML',
             disable_web_page_preview: true,
+            disable_notification: true,
             reply_markup: Markup.inlineKeyboard([
               [
                 Markup.button.url(
@@ -68,7 +81,6 @@ export default function twitterBot(bot: Telegraf) {
                 ),
               ],
             ]).reply_markup,
-            disable_notification: true,
           })
         } else {
           const { data } = await axios.get(images[0], {
@@ -134,6 +146,7 @@ export default function twitterBot(bot: Telegraf) {
               media: { source: e },
             })),
             {
+              reply_to_message_id: parseInt(params[1]),
               disable_notification: true,
             },
           )
@@ -163,6 +176,7 @@ export default function twitterBot(bot: Telegraf) {
               media: { filename: `${tweetId}_${i + 1}.jpg`, source: e },
             })),
             {
+              reply_to_message_id: parseInt(params[1]),
               disable_notification: true,
             },
           )
