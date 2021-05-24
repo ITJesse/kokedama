@@ -12,7 +12,9 @@ const exhentaiApi = axios.create({
 })
 
 const tags = JSON.parse(
-  fs.readFileSync(path.resolve(__dirname, './data/tags.json')).toString(),
+  fs
+    .readFileSync(path.resolve(__dirname, '../../../data/tags.json'))
+    .toString(),
 )
 
 export const getGalleryMeta = async (gid: number, gtoken: string) => {
