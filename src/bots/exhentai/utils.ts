@@ -1,6 +1,7 @@
 import axios from 'axios'
 import fs from 'fs'
 import path from 'path'
+import emojiRegexRGI from 'emoji-regex'
 
 import { GalleryMetaResponse, GalleryTokenResponse } from './types'
 
@@ -69,7 +70,9 @@ export const translateTag = (tag: string, checkMisc = false): string[] => {
         text.push(key)
         break
       }
-      text.push(translate.name.split(' ').join('_'))
+      text.push(
+        translate.name.replace(emojiRegexRGI(), '').split(' ').join('_'),
+      )
       hasTranslate = true
     }
   }
