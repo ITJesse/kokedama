@@ -9,6 +9,6 @@ export default function infoBot(bot: Telegraf) {
 
     const from = ctx.update.message?.from
     const msg = `Group ID: ${groupId}\nUser ID: ${from?.id}`
-    ctx.telegram.sendMessage(groupId, msg)
+    ctx.reply(msg)
   })
 }
