@@ -2,12 +2,13 @@ import axios from 'axios'
 import fs from 'fs'
 import path from 'path'
 
-import { GalleryMetaResponse } from './types'
+import { GalleryMetaResponse, GalleryTokenResponse } from './types'
 
-const exhentaiApi = axios.create({
-  baseURL: 'https://exhentai.org',
+export const exhentaiApi = axios.create({
   headers: {
     Cookie: process.env.EXHENTAI_COOKIES,
+    'User-Agent':
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 11_3_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.82 Safari/537.36',
   },
 })
 
@@ -18,12 +19,31 @@ const tags = JSON.parse(
 )
 
 export const getGalleryMeta = async (gid: number, gtoken: string) => {
-  const { data } = await exhentaiApi.post<GalleryMetaResponse>('/api.php', {
-    method: 'gdata',
-    gidlist: [[gid, gtoken]],
-    namespace: 1,
-  })
+  const { data } = await exhentaiApi.post<GalleryMetaResponse>(
+    'https://exhentai.org/api.php',
+    {
+      method: 'gdata',
+      gidlist: [[gid, gtoken]],
+      namespace: 1,
+    },
+  )
   return data.gmetadata[0]
+}
+
+export const getGalleryToken = async (
+  gid: number,
+  ptoken: string,
+  page: number,
+) => {
+  const { data } = await exhentaiApi.post<GalleryTokenResponse>(
+    'https://exhentai.org/api.php',
+    {
+      method: 'gtoken',
+      pagelist: [[gid, ptoken, page]],
+      namespace: 1,
+    },
+  )
+  return data.tokenlist[0]
 }
 
 export const translateTag = (tag: string, checkMisc = false): string[] => {

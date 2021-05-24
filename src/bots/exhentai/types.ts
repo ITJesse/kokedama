@@ -28,3 +28,7 @@ export type GalleryMeta = {
 export type GalleryMetaResponse = {
   gmetadata: GalleryMeta[]
 }
+
+export type GalleryTokenResponse = {
+  tokenlist: { gid: number; token: string }[]
+}
