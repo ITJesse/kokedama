@@ -3,6 +3,7 @@ import { Telegraf } from 'telegraf'
 import groupBot from './bots/group'
 import infoBot from './bots/info'
 import twitterBot from './bots/twitter'
+import exhentaiBot from './bots/exhentai'
 
 const bot = new Telegraf(process.env.BOT_TOKEN ?? '')
 
@@ -13,9 +14,41 @@ bot.use(async (_, next) => {
   console.log('Response time: %sms', ms)
 })
 
+bot.on('callback_query', async (ctx, next) => {
+  const groupId = ctx.update.callback_query?.message?.chat.id
+  if (!('data' in ctx.update.callback_query)) {
+    return next()
+  }
+  const data = ctx.update.callback_query.data
+  if (!data || !groupId) {
+    return next()
+  }
+  const cmd = data.split('|')[0]
+  const params = data.split('|')[1]?.split(',')
+  switch (cmd) {
+    case 'cancel_and_remove': {
+      try {
+        ctx.tg.deleteMessage(
+          groupId,
+          ctx.update.callback_query?.message?.message_id ?? 0,
+        )
+      } catch {}
+      break
+    }
+    case 'remove_message': {
+      try {
+        await ctx.tg.deleteMessage(groupId, parseInt(params[0]))
+      } catch {}
+      break
+    }
+  }
+  next()
+})
+
 twitterBot(bot)
 groupBot(bot)
 infoBot(bot)
+exhentaiBot(bot)
 
 bot.launch()
 console.log('Bot started.')

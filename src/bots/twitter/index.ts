@@ -1,21 +1,14 @@
 import axios from 'axios'
 import { Markup, Telegraf } from 'telegraf'
 
-import {
-  getOrigImgUrl,
-  getTweetById,
-  getTweetUrl,
-  getUserUrl,
-} from '../utils/twitter'
+import { getOrigImgUrl, getTweetById, getTweetUrl, getUserUrl } from './utils'
 
 export default function twitterBot(bot: Telegraf) {
   bot.hears(
     /https:\/\/twitter\.com\/(\w+)\/status\/(\d+)/,
     async (ctx, next) => {
-      const text = ctx.update.message.text
-      const result = text.match(/https:\/\/twitter\.com\/(\w+)\/status\/(\d+)/)
-      if (result) {
-        const tweetId = result[2]
+      if (ctx.match) {
+        const tweetId = ctx.match[2]
         // const tweet = await getTweetById(tweetId)
         const msg = await ctx.reply('发现 Twitter 链接，请选择操作：', {
           reply_to_message_id: ctx.update.message?.message_id,
@@ -52,21 +45,6 @@ export default function twitterBot(bot: Telegraf) {
     const cmd = data.split('|')[0]
     const params = data.split('|')[1]?.split(',')
     switch (cmd) {
-      case 'cancel_and_remove': {
-        try {
-          ctx.tg.deleteMessage(
-            groupId,
-            ctx.update.callback_query?.message?.message_id ?? 0,
-          )
-        } catch {}
-        break
-      }
-      case 'remove_message': {
-        try {
-          await ctx.tg.deleteMessage(groupId, parseInt(params[0]))
-        } catch {}
-        break
-      }
       case 'preview_tweet': {
         const tweetId = params[0]
         const tweet = await getTweetById(tweetId)
