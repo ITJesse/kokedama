@@ -90,17 +90,16 @@ export default function exhentaiBot(bot: Telegraf) {
       case 'exhentai_download': {
         const [gid, gtoken] = params
         const meta = await getGalleryMeta(parseInt(gid), gtoken)
-        await exhentaiApi.post(
-          'https://exhentai.org/archiver.php',
-          { hathdl_xres: 'org' },
-          {
-            params: {
-              gid,
-              token: gtoken,
-              or: meta.archiver_key,
-            },
+        const body = new FormData()
+        body.append('hathdl_xres', 'org')
+        await exhentaiApi.post('https://exhentai.org/archiver.php', body, {
+          params: {
+            gid,
+            token: gtoken,
+            or: meta.archiver_key,
           },
-        )
+          headers: { 'Content-Type': 'multipart/form-data' },
+        })
         const msg = await ctx.tg.sendMessage(
           groupId,
           galleryDownloadTemplate(
