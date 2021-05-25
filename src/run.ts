@@ -3,7 +3,7 @@ import { Telegraf } from 'telegraf'
 import exhentaiBot from './bots/exhentai'
 import groupBot from './bots/group'
 import infoBot from './bots/info'
-import twitterBot from './bots/twitter'
+import twitterBot, { task } from './bots/twitter'
 import scheduler from './scheduler'
 
 const bot = new Telegraf(process.env.BOT_TOKEN ?? '')

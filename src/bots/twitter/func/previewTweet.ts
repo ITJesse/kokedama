@@ -14,6 +14,7 @@ export default async function previewTweet(
     (e: any) => e.url ?? e.preview_image_url,
   )
   const content = `${tweet.data.text}`
+
   if (!images) {
     bot.telegram.sendMessage(chatId, content, {
       parse_mode: 'HTML',
@@ -33,43 +34,36 @@ export default async function previewTweet(
       ]).reply_markup,
     })
   } else {
-    const { data } = await axios.get(images[0], {
-      responseType: 'arraybuffer',
-    })
-    bot.telegram.sendPhoto(
+    const imageBufs: Buffer[] = await Promise.all(
+      images.map((e: any) =>
+        axios
+          .get(e, { responseType: 'arraybuffer' })
+          .then(({ data }) => Buffer.from(data)),
+      ),
+    )
+    const link = `\n\n查看作者`
+
+    bot.telegram.sendMediaGroup(
       chatId,
-      { source: Buffer.from(data) },
+      imageBufs.map((e, index) => ({
+        type: 'photo',
+        media: { source: e },
+        caption: index === 0 ? content + link : undefined,
+        caption_entities:
+          index === 0
+            ? [
+                {
+                  offset: content.length + 2,
+                  length: 4,
+                  type: 'text_link',
+                  url: getUserUrl(tweet.includes.users[0].username),
+                },
+              ]
+            : undefined,
+      })),
       {
-        caption: content,
-        parse_mode: 'HTML',
-        disable_notification: true,
         reply_to_message_id: replyMsgId,
-        reply_markup: Markup.inlineKeyboard([
-          [
-            ...(images.length > 1
-              ? [
-                  Markup.button.callback(
-                    `全部预览（共${images.length}张）`,
-                    `preview_tweet_all|${tweetId},${replyMsgId}`,
-                  ),
-                ]
-              : []),
-            Markup.button.callback(
-              `下载原图（共${images.length}张）`,
-              `download_tweet_all|${tweetId},${replyMsgId}`,
-            ),
-          ],
-          [
-            Markup.button.url(
-              `作者：${tweet.includes.users[0].name}`,
-              getUserUrl(tweet.includes.users[0].username),
-            ),
-            Markup.button.url(
-              '原文链接',
-              getTweetUrl(tweet.includes.users[0].username, tweetId),
-            ),
-          ],
-        ]).reply_markup,
+        disable_notification: true,
       },
     )
   }

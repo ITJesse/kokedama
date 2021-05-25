@@ -24,6 +24,7 @@ export default async function previewTweetAll(
       imageBufs.map((e) => ({
         type: 'photo',
         media: { source: e },
+        caption: 'test',
       })),
       {
         reply_to_message_id: replyMsgId,

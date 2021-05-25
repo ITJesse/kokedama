@@ -82,5 +82,5 @@ export default function twitterBot(bot: Telegraf) {
 }
 
 export const task = async (bot: Telegraf) => {
-  const likes = await getLikesByName(process.env.TWITTER_SCREEN_NAME ?? '')
+  // const likes = await getLikesByName(process.env.TWITTER_SCREEN_NAME ?? '')
 }
