@@ -3,6 +3,7 @@ import { Markup, Telegraf } from 'telegraf'
 import downloadTweetAll from './func/downloadTweetAll'
 import previewTweet from './func/previewTweet'
 import previewTweetAll from './func/previewTweetAll'
+import { getLikesByName } from './utils'
 
 export default function twitterBot(bot: Telegraf) {
   bot.hears(
@@ -78,4 +79,8 @@ export default function twitterBot(bot: Telegraf) {
     }
     next()
   })
+}
+
+export const task = async (bot: Telegraf) => {
+  const likes = await getLikesByName(process.env.TWITTER_SCREEN_NAME ?? '')
 }

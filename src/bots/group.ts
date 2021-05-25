@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { Telegraf } from 'telegraf'
 
-import { GROUP_MEMBER_PREFIX } from '@/utils/conts'
+import { GROUP_MEMBER_PREFIX } from '@/utils/consts'
 import * as redis from '@/utils/redis'
 
 const welcom = fs
