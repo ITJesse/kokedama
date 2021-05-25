@@ -8,5 +8,7 @@ export default async function scheduler(bot: Telegraf) {
     await exhentaiTask(bot)
   }, 5000)
 
-  await twitterTask(bot)
+  setInterval(async () => {
+    await twitterTask(bot)
+  }, 30000)
 }

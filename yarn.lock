@@ -2279,6 +2279,11 @@ tweetnacl@^0.14.3, tweetnacl@~0.14.0:
   resolved "https://registry.npmjs.org/tweetnacl/-/tweetnacl-0.14.5.tgz"
   integrity sha1-WuaBd/GS1EViadEIr6k/+HQ/T2Q=
 
+twitter-d@^0.4.0:
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/twitter-d/-/twitter-d-0.4.0.tgz#3b7e2dd480c38699f4199124b77511c6f7bc8e29"
+  integrity sha512-t8z7qqq0yt1dD7BUISRvASw9mtYRMSTTVzmkvjz8oM9ZN++LEC6Ix8WEXZS0RtswnGgwdSPTxY9qyHcYgPexdA==
+
 type-check@~0.3.2:
   version "0.3.2"
   resolved "https://registry.yarnpkg.com/type-check/-/type-check-0.3.2.tgz#5884cab512cf1d355e3fb784f30804b2b520db72"

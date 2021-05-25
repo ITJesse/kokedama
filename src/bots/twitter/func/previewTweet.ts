@@ -7,7 +7,7 @@ export default async function previewTweet(
   bot: Telegraf,
   tweetId: string,
   chatId: number,
-  replyMsgId: number,
+  replyMsgId?: number,
 ) {
   const tweet = await getTweetById(tweetId)
   const images = tweet.includes.media?.map(
@@ -41,30 +41,48 @@ export default async function previewTweet(
           .then(({ data }) => Buffer.from(data)),
       ),
     )
-    const link = `\n\n查看作者`
 
-    bot.telegram.sendMediaGroup(
+    bot.telegram.sendPhoto(
       chatId,
-      imageBufs.map((e, index) => ({
-        type: 'photo',
-        media: { source: e },
-        caption: index === 0 ? content + link : undefined,
-        caption_entities:
-          index === 0
-            ? [
-                {
-                  offset: content.length + 2,
-                  length: 4,
-                  type: 'text_link',
-                  url: getUserUrl(tweet.includes.users[0].username),
-                },
-              ]
-            : undefined,
-      })),
+      { source: Buffer.from(imageBufs[0]) },
       {
-        reply_to_message_id: replyMsgId,
+        caption: content,
+        parse_mode: 'HTML',
         disable_notification: true,
+        reply_to_message_id: replyMsgId,
+        reply_markup: Markup.inlineKeyboard([
+          [
+            Markup.button.callback(
+              `下载原图（共${images.length}张）`,
+              `download_tweet_all|${tweetId},${replyMsgId}`,
+            ),
+          ],
+          [
+            Markup.button.url(
+              `作者：${tweet.includes.users[0].name}`,
+              getUserUrl(tweet.includes.users[0].username),
+            ),
+            Markup.button.url(
+              '原文链接',
+              getTweetUrl(tweet.includes.users[0].username, tweetId),
+            ),
+          ],
+        ]).reply_markup,
       },
     )
+
+    if (imageBufs.length > 1) {
+      bot.telegram.sendMediaGroup(
+        chatId,
+        imageBufs.map((e) => ({
+          type: 'photo',
+          media: { source: e },
+        })),
+        {
+          reply_to_message_id: replyMsgId,
+          disable_notification: true,
+        },
+      )
+    }
   }
 }

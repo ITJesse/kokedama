@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { Status } from 'twitter-d'
 
 const twitterApi = axios.create({
   baseURL: 'https://api.twitter.com/',
@@ -8,10 +9,13 @@ const twitterApi = axios.create({
 })
 
 export const getLikesByName = async (name: string) => {
-  const { data } = await twitterApi.get(
-    '/1.1/favorites/list.json?screen_name=' + name,
-  )
-  console.log(data)
+  const { data } = await twitterApi.get<Status[]>('/1.1/favorites/list.json', {
+    params: {
+      screen_name: name,
+      since_id: 1396665396929830912,
+    },
+  })
+  return data
 }
 
 export const getTweetById = async (id: string) => {
