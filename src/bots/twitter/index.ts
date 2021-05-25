@@ -7,6 +7,7 @@ import previewTweet from './func/previewTweet'
 import previewTweetAll from './func/previewTweetAll'
 import { getLikesByName } from './utils'
 import { TWITTER_SENT_LIST } from '@/utils/consts'
+import { delay } from '@/utils'
 
 export function twitterBot(bot: Telegraf) {
   bot.hears(
@@ -85,19 +86,26 @@ export function twitterBot(bot: Telegraf) {
 }
 
 export const task = async (bot: Telegraf) => {
-  const sent = JSON.parse((await redis.get(TWITTER_SENT_LIST)) ?? '[]')
-  const likes = await getLikesByName(
-    process.env.TWITTER_SCREEN_NAME ?? '',
-  ).then((res) => res.filter((e) => !sent.includes(e.id)))
+  const sent: number[] = JSON.parse(
+    (await redis.get(TWITTER_SENT_LIST)) ?? '[]',
+  )
+  const likes = await getLikesByName(process.env.TWITTER_USER_ID ?? '').then(
+    (res) => res.data.filter((e) => !sent.includes(parseInt(e.id))),
+  )
   await redis.set(
     TWITTER_SENT_LIST,
-    JSON.stringify(Array.from(new Set([...sent, ...likes.map((e) => e.id)]))),
+    JSON.stringify(
+      Array.from(
+        new Set<number>([...sent, ...likes.map((e) => parseInt(e.id))]),
+      ),
+    ),
   )
   for (const like of likes) {
     await previewTweet(
       bot,
-      like.id_str,
+      like.id,
       parseInt(process.env.TELEGRAM_GROUP_ID ?? ''),
     )
+    await delay(1000)
   }
 }
