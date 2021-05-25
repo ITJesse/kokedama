@@ -1,6 +1,6 @@
 import { Telegraf } from 'telegraf'
 
-export default function infoBot(bot: Telegraf) {
+export function infoBot(bot: Telegraf) {
   bot.command('info', (ctx) => {
     const groupId = ctx.chat?.id
     if (!groupId) {

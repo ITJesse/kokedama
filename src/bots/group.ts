@@ -9,7 +9,7 @@ const welcom = fs
   .readFileSync(path.resolve(__dirname, '../../templates/welcome.txt'))
   .toString()
 
-export default function groupBot(bot: Telegraf) {
+export function groupBot(bot: Telegraf) {
   bot.on('text', async (ctx, next) => {
     const groupId = ctx.message.chat.id
     // 标记活跃用户

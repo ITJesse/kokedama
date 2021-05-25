@@ -26,7 +26,7 @@ const galleryUrlRegex = /https:\/\/e(x|-)hentai\.org\/g\/(\d+)\/([a-f0-9]+)\//i
 const galleryPageUrlRegex =
   /https:\/\/e(x|-)hentai\.org\/s\/([a-f0-9]+)\/(\d+)-(\d+)/i
 
-export default function exhentaiBot(bot: Telegraf) {
+export function exhentaiBot(bot: Telegraf) {
   bot.hears([galleryUrlRegex, galleryPageUrlRegex], async (ctx, next) => {
     let gid: number
     let gtoken: string

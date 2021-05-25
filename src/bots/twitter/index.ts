@@ -8,7 +8,7 @@ import previewTweetAll from './func/previewTweetAll'
 import { getLikesByName } from './utils'
 import { TWITTER_SENT_LIST } from '@/utils/consts'
 
-export default function twitterBot(bot: Telegraf) {
+export function twitterBot(bot: Telegraf) {
   bot.hears(
     /https:\/\/twitter\.com\/(\w+)\/status\/(\d+)/,
     async (ctx, next) => {
