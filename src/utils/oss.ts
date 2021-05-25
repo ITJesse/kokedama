@@ -1,4 +1,4 @@
-import OSS, { SignatureUrlOptions } from 'ali-oss'
+import OSS from 'ali-oss'
 import { ReadStream } from 'fs'
 
 const createClient = () =>

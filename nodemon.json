@@ -2,6 +2,6 @@
   "verbose": true,
   "watch": ["src/**/*.ts", "src/**/*.js"],
   "execMap": {
-    "ts": "ts-node -r dotenv/config"
+    "ts": "ts-node -r dotenv/config -r tsconfig-paths/register"
   }
 }

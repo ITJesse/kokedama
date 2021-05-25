@@ -2,11 +2,11 @@ import fs from 'fs'
 import path from 'path'
 import { Markup, Telegraf } from 'telegraf'
 
-import { delay } from '../../utils'
-import { EXHENTAI_DOWNLOADS } from '../../utils/conts'
-import { getUrl, upload } from '../../utils/oss'
-import * as redis from '../../utils/redis'
-import { create7Zip } from '../../utils/zip'
+import { EXHENTAI_DOWNLOADS } from '@/utils/conts'
+import { getUrl, upload } from '@/utils/oss'
+import * as redis from '@/utils/redis'
+import { create7Zip } from '@/utils/zip'
+
 import {
   galleryArchiveTemplate,
   galleryDoneTemplate,

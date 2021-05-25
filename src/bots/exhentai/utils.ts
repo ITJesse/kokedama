@@ -1,7 +1,7 @@
 import axios from 'axios'
+import emojiRegexRGI from 'emoji-regex'
 import fs from 'fs'
 import path from 'path'
-import emojiRegexRGI from 'emoji-regex'
 
 import { GalleryMetaResponse, GalleryTokenResponse } from './types'
 
