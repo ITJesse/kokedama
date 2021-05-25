@@ -106,6 +106,13 @@ export default function exhentaiBot(bot: Telegraf) {
             disable_notification: true,
           },
         )
+        const task = await redis.hget(EXHENTAI_DOWNLOADS, `${gid}`)
+        try {
+          const data: DownloadTaskPayload = JSON.parse(task ?? '')
+          const { msgId } = data
+          await ctx.tg.deleteMessage(groupId, msgId)
+        } catch {}
+
         await redis.hset([
           EXHENTAI_DOWNLOADS,
           `${gid}`,
