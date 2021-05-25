@@ -1,9 +1,10 @@
 import { Telegraf } from 'telegraf'
 
+import exhentaiBot from './bots/exhentai'
 import groupBot from './bots/group'
 import infoBot from './bots/info'
 import twitterBot from './bots/twitter'
-import exhentaiBot from './bots/exhentai'
+import scheduler from './scheduler'
 
 const bot = new Telegraf(process.env.BOT_TOKEN ?? '')
 
@@ -49,6 +50,8 @@ twitterBot(bot)
 groupBot(bot)
 infoBot(bot)
 exhentaiBot(bot)
+
+scheduler(bot)
 
 bot.launch()
 console.log('Bot started.')

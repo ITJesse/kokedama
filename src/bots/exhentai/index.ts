@@ -123,80 +123,65 @@ export default function exhentaiBot(bot: Telegraf) {
     }
     next()
   })
+}
 
-  const task = async () => {
-    const tasks = await redis.hgetall(EXHENTAI_DOWNLOADS)
-    const gids = Object.keys(tasks ?? {}).map((key) => parseInt(key))
+export const task = async (bot: Telegraf) => {
+  const tasks = await redis.hgetall(EXHENTAI_DOWNLOADS)
+  const gids = Object.keys(tasks ?? {}).map((key) => parseInt(key))
 
-    for (const gid of gids) {
-      try {
-        const data: DownloadTaskPayload = JSON.parse(tasks[gid])
-        const title = data.meta.title_jpn
-          ? data.meta.title_jpn
-          : data.meta.title
-        const folderName = `${title} [${gid}]`.replace(/\//g, '')
-        const folderPath = path.join(
-          process.env.EXHENTAI_DOWNLOAD_PATH ?? '',
-          folderName,
-        )
-        if (!fs.existsSync(folderPath)) {
-          continue
-        }
-        const list = fs.readdirSync(folderPath)
-
-        if (list.includes('galleryinfo.txt')) {
-          await redis.hdel([EXHENTAI_DOWNLOADS, `${gid}`])
-          await bot.telegram.editMessageText(
-            data.groupId,
-            data.msgId,
-            undefined,
-            galleryArchiveTemplate(title),
-            { parse_mode: 'HTML' },
-          )
-          const filepath = path.join(`${gid}`, data.meta.token, 'archive.7z')
-          const { output, filesize } = await create7Zip(filepath, folderPath)
-          await bot.telegram.editMessageText(
-            data.groupId,
-            data.msgId,
-            undefined,
-            galleryUploadTemplate(title),
-            { parse_mode: 'HTML' },
-          )
-          await upload(filepath, fs.createReadStream(output, { flags: 'r' }))
-          await bot.telegram.deleteMessage(data.groupId, data.msgId)
-          await bot.telegram.sendMessage(
-            data.groupId,
-            galleryDoneTemplate(title, filesize),
-            {
-              parse_mode: 'HTML',
-              disable_web_page_preview: true,
-              reply_markup: Markup.inlineKeyboard([
-                Markup.button.url('下载', getUrl(filepath)),
-              ]).reply_markup,
-            },
-          )
-        } else {
-          const count = list.length - 1
-          await bot.telegram.editMessageText(
-            data.groupId,
-            data.msgId,
-            undefined,
-            galleryDownloadTemplate(
-              title,
-              count,
-              parseInt(data.meta.filecount),
-            ),
-            { parse_mode: 'HTML' },
-          )
-        }
-      } catch (err) {
-        console.error(err)
-      }
+  for (const gid of gids) {
+    const data: DownloadTaskPayload = JSON.parse(tasks[gid])
+    const title = data.meta.title_jpn ? data.meta.title_jpn : data.meta.title
+    const folderName = `${title} [${gid}]`.replace(/\//g, '')
+    const folderPath = path.join(
+      process.env.EXHENTAI_DOWNLOAD_PATH ?? '',
+      folderName,
+    )
+    if (!fs.existsSync(folderPath)) {
+      continue
     }
+    const list = fs.readdirSync(folderPath)
 
-    await delay(5000)
-    await task()
+    if (list.includes('galleryinfo.txt')) {
+      await redis.hdel([EXHENTAI_DOWNLOADS, `${gid}`])
+      await bot.telegram.editMessageText(
+        data.groupId,
+        data.msgId,
+        undefined,
+        galleryArchiveTemplate(title),
+        { parse_mode: 'HTML' },
+      )
+      const filepath = path.join(`${gid}`, data.meta.token, 'archive.7z')
+      const { output, filesize } = await create7Zip(filepath, folderPath)
+      await bot.telegram.editMessageText(
+        data.groupId,
+        data.msgId,
+        undefined,
+        galleryUploadTemplate(title),
+        { parse_mode: 'HTML' },
+      )
+      await upload(filepath, fs.createReadStream(output, { flags: 'r' }))
+      await bot.telegram.deleteMessage(data.groupId, data.msgId)
+      await bot.telegram.sendMessage(
+        data.groupId,
+        galleryDoneTemplate(title, filesize),
+        {
+          parse_mode: 'HTML',
+          disable_web_page_preview: true,
+          reply_markup: Markup.inlineKeyboard([
+            Markup.button.url('下载', getUrl(filepath)),
+          ]).reply_markup,
+        },
+      )
+    } else {
+      const count = list.length - 1
+      await bot.telegram.editMessageText(
+        data.groupId,
+        data.msgId,
+        undefined,
+        galleryDownloadTemplate(title, count, parseInt(data.meta.filecount)),
+        { parse_mode: 'HTML' },
+      )
+    }
   }
-
-  task()
 }
