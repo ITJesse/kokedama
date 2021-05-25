@@ -5,10 +5,18 @@ import { task as twitterTask } from './bots/twitter'
 
 export default async function scheduler(bot: Telegraf) {
   setInterval(async () => {
-    await exhentaiTask(bot)
+    try {
+      await exhentaiTask(bot)
+    } catch (err) {
+      console.error(err)
+    }
   }, 5000)
 
   setInterval(async () => {
-    await twitterTask(bot)
+    try {
+      await twitterTask(bot)
+    } catch (err) {
+      console.error(err)
+    }
   }, 30000)
 }

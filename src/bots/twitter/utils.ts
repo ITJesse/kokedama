@@ -12,7 +12,7 @@ export const getLikesByName = async (name: string) => {
   const { data } = await twitterApi.get<Status[]>('/1.1/favorites/list.json', {
     params: {
       screen_name: name,
-      since_id: 1396665396929830912,
+      since_id: 1396592442372095000,
     },
   })
   return data
