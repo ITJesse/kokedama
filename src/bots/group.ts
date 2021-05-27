@@ -13,7 +13,7 @@ export function groupBot(bot: Telegraf) {
   bot.on('text', async (ctx, next) => {
     const groupId = ctx.message.chat.id
     // 标记活跃用户
-    if (!groupId || groupId !== parseInt(process.env.TELEGRAM_GROUP_ID ?? '')) {
+    if (!groupId) {
       return next()
     }
     const fromId = ctx.update.message?.from?.id
@@ -30,7 +30,7 @@ export function groupBot(bot: Telegraf) {
 
   bot.on('new_chat_members', (ctx, next) => {
     const groupId = ctx.chat?.id
-    if (!groupId || groupId !== parseInt(process.env.TELEGRAM_GROUP_ID ?? '')) {
+    if (!groupId) {
       return next()
     }
 
@@ -53,7 +53,7 @@ export function groupBot(bot: Telegraf) {
 
   bot.on('left_chat_member', async (ctx, next) => {
     const groupId = ctx.update.message?.chat.id
-    if (!groupId || groupId !== parseInt(process.env.TELEGRAM_GROUP_ID ?? '')) {
+    if (!groupId) {
       return next()
     }
 
