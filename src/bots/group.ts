@@ -41,7 +41,11 @@ export function groupBot(bot: Telegraf) {
           ? `@${m.username.replace(/_/g, '\\_')}`
           : `[${m.last_name} ${m.first_name}](tg://user?id=${m.id})`
         const msg = welcom.replace('{username}', username)
-        ctx.telegram.sendMessage(groupId, msg, { parse_mode: 'MarkdownV2' })
+        if (`${groupId}` === process.env.TELEGRAM_GROUP_ID) {
+          await ctx.telegram.sendMessage(groupId, msg, {
+            parse_mode: 'MarkdownV2',
+          })
+        }
         await redis.hset([
           `${GROUP_MEMBER_PREFIX}${groupId}`,
           `${m.id}`,
