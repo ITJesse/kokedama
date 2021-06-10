@@ -132,7 +132,9 @@ export const task = async (bot: Telegraf) => {
   for (const gid of gids) {
     const data: DownloadTaskPayload = JSON.parse(tasks[gid])
     const title = data.meta.title_jpn ? data.meta.title_jpn : data.meta.title
-    const folderName = `${title} [${gid}]`.replace(/\//g, '')
+    const folderName = `${title} [${gid}]`
+      .replace(/\//g, '')
+      .replace(/&#039;/g, "'")
     const folderPath = path.join(
       process.env.EXHENTAI_DOWNLOAD_PATH ?? '',
       folderName,
