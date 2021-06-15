@@ -134,7 +134,9 @@ export const task = async (bot: Telegraf) => {
     const title = data.meta.title_jpn ? data.meta.title_jpn : data.meta.title
     const folderName = `${title} [${gid}]`
       .replace(/\//g, '')
+      .replace(/\|/g, '')
       .replace(/&#039;/g, "'")
+      .replace(/  /g, ' ')
     const folderPath = path.join(
       process.env.EXHENTAI_DOWNLOAD_PATH ?? '',
       folderName,
