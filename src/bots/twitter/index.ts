@@ -106,6 +106,6 @@ export const task = async (bot: Telegraf) => {
       like.id,
       parseInt(process.env.TELEGRAM_GROUP_ID ?? ''),
     )
-    await delay(1000)
+    await delay(3000)
   }
 }
