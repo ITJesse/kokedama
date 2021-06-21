@@ -1,5 +1,4 @@
 import axios from 'axios'
-import { Status } from 'twitter-d'
 
 const twitterApi = axios.create({
   baseURL: 'https://api.twitter.com/',

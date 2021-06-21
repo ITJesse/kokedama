@@ -18,5 +18,5 @@ export default async function scheduler(bot: Telegraf) {
     } catch (err) {
       console.error(err)
     }
-  }, 30000)
+  }, 60000)
 }
