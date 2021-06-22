@@ -12,11 +12,11 @@ export default async function scheduler(bot: Telegraf) {
     }
   }, 5000)
 
-  setInterval(async () => {
-    try {
-      await twitterTask(bot)
-    } catch (err) {
-      console.error(err)
-    }
-  }, 60000)
+  // setInterval(async () => {
+  //   try {
+  //     await twitterTask(bot)
+  //   } catch (err) {
+  //     console.error(err)
+  //   }
+  // }, 60000)
 }
