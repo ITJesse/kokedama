@@ -4,11 +4,11 @@ import { ReadStream } from 'fs'
 const createClient = () =>
   new OSS({
     // endpoint: 'oss-cn-guangzhou.aliyuncs.com',
-    endpoint: 'oss-accelerate.aliyuncs.com',
+    // endpoint: 'oss-accelerate.aliyuncs.com',
     accessKeyId: process.env.ALIYUN_OSS_KEY ?? '',
     accessKeySecret: process.env.ALIYUN_OSS_SECRET ?? '',
     bucket: process.env.ALIYUN_OSS_BUCKET,
-    region: 'oss-cn-guangzhou',
+    region: process.env.ALIYUN_OSS_REGION,
     secure: true,
   })
 
