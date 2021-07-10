@@ -164,7 +164,10 @@ export const task = async (bot: Telegraf) => {
         galleryUploadTemplate(title),
         { parse_mode: 'HTML' },
       )
-      await upload(filepath, fs.createReadStream(output, { flags: 'r' }))
+      await fs.copyFileSync(
+        output,
+        path.resolve(process.env.EXHENTAI_NFS_PATH ?? '', filepath),
+      )
       await bot.telegram.deleteMessage(data.groupId, data.msgId)
       await bot.telegram.sendMessage(
         data.groupId,
@@ -173,7 +176,10 @@ export const task = async (bot: Telegraf) => {
           parse_mode: 'HTML',
           disable_web_page_preview: true,
           reply_markup: Markup.inlineKeyboard([
-            Markup.button.url('下载', getUrl(filepath)),
+            Markup.button.url(
+              '下载',
+              `${process.env.EXHENTAI_NFS_BASEURL}${filepath}`,
+            ),
           ]).reply_markup,
         },
       )
