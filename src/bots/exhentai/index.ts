@@ -164,10 +164,14 @@ export const task = async (bot: Telegraf) => {
         galleryUploadTemplate(title),
         { parse_mode: 'HTML' },
       )
-      await fs.copyFileSync(
-        output,
-        path.resolve(process.env.EXHENTAI_NFS_PATH ?? '', filepath),
+      const nfsFilePath = path.resolve(
+        process.env.EXHENTAI_NFS_PATH ?? '',
+        filepath,
       )
+      await fs.mkdirSync(nfsFilePath.split('/').slice(0, -1).join('/'), {
+        recursive: true,
+      })
+      await fs.copyFileSync(output, nfsFilePath)
       await bot.telegram.deleteMessage(data.groupId, data.msgId)
       await bot.telegram.sendMessage(
         data.groupId,
