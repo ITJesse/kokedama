@@ -156,14 +156,6 @@ export const task = async (bot: Telegraf) => {
         { parse_mode: 'HTML' },
       )
       const filepath = path.join(`${gid}`, data.meta.token, 'archive.7z')
-      const { output, filesize } = await create7Zip(filepath, folderPath)
-      await bot.telegram.editMessageText(
-        data.groupId,
-        data.msgId,
-        undefined,
-        galleryUploadTemplate(title),
-        { parse_mode: 'HTML' },
-      )
       const nfsFilePath = path.resolve(
         process.env.EXHENTAI_NFS_PATH ?? '',
         filepath,
@@ -171,7 +163,7 @@ export const task = async (bot: Telegraf) => {
       await fs.mkdirSync(nfsFilePath.split('/').slice(0, -1).join('/'), {
         recursive: true,
       })
-      await fs.copyFileSync(output, nfsFilePath)
+      const { filesize } = await create7Zip(nfsFilePath, folderPath)
       await bot.telegram.deleteMessage(data.groupId, data.msgId)
       await bot.telegram.sendMessage(
         data.groupId,
@@ -182,7 +174,7 @@ export const task = async (bot: Telegraf) => {
           reply_markup: Markup.inlineKeyboard([
             Markup.button.url(
               '下载',
-              `${process.env.EXHENTAI_NFS_BASEURL}${filepath}`,
+              `${process.env.EXHENTAI_NFS_BASEURL}/${filepath}`,
             ),
           ]).reply_markup,
         },
