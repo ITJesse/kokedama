@@ -47,7 +47,7 @@ bot.on('callback_query', async (ctx, next) => {
 })
 
 twitterBot(bot)
-groupBot(bot)
+// groupBot(bot)
 infoBot(bot)
 exhentaiBot(bot)
 
