@@ -1,7 +1,7 @@
 import { Telegraf } from 'telegraf'
 
 import { exhentaiBot } from './bots/exhentai'
-import { groupBot } from './bots/group'
+// import { groupBot } from './bots/group'
 import { infoBot } from './bots/info'
 import { twitterBot } from './bots/twitter'
 import scheduler from './scheduler'
