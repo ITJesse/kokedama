@@ -145,6 +145,7 @@ export const task = async (bot: Telegraf) => {
       .replace(/\//g, '')
       .replace(/\|/g, '')
       .replace(/&#039;/g, "'")
+      .replace(/&amp;/g, '&')
       .replace(/  /g, ' ')
     const folderPath = path.join(
       process.env.EXHENTAI_DOWNLOAD_PATH ?? '',
