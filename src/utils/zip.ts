@@ -1,6 +1,5 @@
 import sevenBin from '7zip-bin'
 import node7z from 'node-7z'
-import path from 'path'
 
 const pathTo7zip = sevenBin.path7za
 
