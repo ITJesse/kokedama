@@ -16,6 +16,8 @@
     "dayjs": "^1.10.4",
     "dotenv": "^8.2.0",
     "emoji-regex": "^9.2.2",
+    "form-data": "^4.0.0",
+    "limiter": "^2.1.0",
     "module-alias": "^2.2.2",
     "node-7z": "^2.1.2",
     "node-telegram-bot-api": "^0.51.0",
@@ -25,7 +27,7 @@
   },
   "devDependencies": {
     "@types/ali-oss": "^6.0.8",
-    "@types/node": "^14.14.20",
+    "@types/node": "^16.0.0",
     "@types/node-7z": "^2.1.1",
     "@types/redis": "^2.8.28",
     "nodemon": "^2.0.7",
