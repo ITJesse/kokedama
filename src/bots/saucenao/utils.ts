@@ -1,10 +1,29 @@
 import axios from 'axios'
 import FormData from 'form-data'
 import { RateLimiter } from 'limiter'
-import { Options, SagiriResult } from 'sagiri'
 
 import { Response, Result } from './response'
 import sites from './sites'
+
+export interface Options {
+  results?: number
+  mask?: number[]
+  excludeMask?: number[]
+  // getRatings?: boolean;
+  testMode?: boolean
+  db?: number
+}
+
+export interface SagiriResult {
+  url: string
+  site: string
+  index: number
+  similarity: number
+  thumbnail: string
+  authorName: string | null
+  authorUrl: string | null
+  raw: Result
+}
 
 const limiter = new RateLimiter({ tokensPerInterval: 10, interval: 30000 })
 
