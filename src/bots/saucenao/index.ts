@@ -1,6 +1,9 @@
 import { Telegraf } from 'telegraf'
 import axios from 'axios'
-import { search } from './saucenao/utils'
+import { search } from './utils'
+
+const ALLOWED_GROUP =
+  process.env.EXHENTAI_ALLOWED_GROUP?.split(',').map((e) => parseInt(e)) || []
 
 export function saucenaoBot(bot: Telegraf) {
   bot.on('photo', async (ctx) => {
@@ -8,6 +11,11 @@ export function saucenaoBot(bot: Telegraf) {
     if (!chatId) {
       return
     }
+    // 限制生效的群聊
+    if (!ALLOWED_GROUP.includes(chatId)) {
+      return
+    }
+
     const imageUrl = await bot.telegram.getFileLink(
       ctx.message.photo.sort(
         (a, b) => b.width * b.height - a.width * a.height,

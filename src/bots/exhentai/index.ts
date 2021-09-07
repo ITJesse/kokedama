@@ -3,7 +3,6 @@ import path from 'path'
 import { Markup, Telegraf } from 'telegraf'
 
 import { EXHENTAI_DOWNLOADS } from '@/utils/consts'
-import { getUrl, upload } from '@/utils/oss'
 import * as redis from '@/utils/redis'
 import { create7Zip } from '@/utils/zip'
 
@@ -12,7 +11,6 @@ import {
   galleryDoneTemplate,
   galleryDownloadTemplate,
   galleryMetaTemplate,
-  galleryUploadTemplate,
 } from './templates'
 import { DownloadTaskPayload } from './types'
 import {
