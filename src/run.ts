@@ -3,13 +3,24 @@ import { Telegraf } from 'telegraf'
 import { exhentaiBot } from './bots/exhentai'
 // import { groupBot } from './bots/group'
 import { infoBot } from './bots/info'
-import { twitterBot } from './bots/twitter'
 import { saucenaoBot } from './bots/saucenao'
+import { twitterBot } from './bots/twitter'
 import scheduler from './scheduler'
 
 const bot = new Telegraf(process.env.BOT_TOKEN ?? '')
 
-bot.use(async (_, next) => {
+const ALLOWED_GROUP =
+  process.env.ALLOWED_GROUP?.split(',').map((e) => parseInt(e)) || []
+
+bot.use(async (ctx, next) => {
+  const chatId = ctx.chat?.id
+  if (chatId && !ALLOWED_GROUP.includes(chatId)) {
+    try {
+      await ctx.telegram.leaveChat(chatId)
+    } catch {}
+    console.info('Leave group', ctx.chat)
+    return
+  }
   const start = Date.now()
   await next()
   const ms = Date.now() - start

@@ -7,34 +7,17 @@ import * as redis from '@/utils/redis'
 import { create7Zip } from '@/utils/zip'
 
 import {
-  galleryArchiveTemplate,
-  galleryDoneTemplate,
-  galleryDownloadTemplate,
-  galleryMetaTemplate,
+    galleryArchiveTemplate, galleryDoneTemplate, galleryDownloadTemplate, galleryMetaTemplate
 } from './templates'
 import { DownloadTaskPayload } from './types'
-import {
-  exhentaiApi,
-  galleryUrl,
-  getGalleryMeta,
-  getGalleryToken,
-} from './utils'
+import { exhentaiApi, galleryUrl, getGalleryMeta, getGalleryToken } from './utils'
 
 const galleryUrlRegex = /https:\/\/e(x|-)hentai\.org\/g\/(\d+)\/([a-f0-9]+)\//i
 const galleryPageUrlRegex =
   /https:\/\/e(x|-)hentai\.org\/s\/([a-f0-9]+)\/(\d+)-(\d+)/i
 
-const ALLOWED_GROUP =
-  process.env.EXHENTAI_ALLOWED_GROUP?.split(',').map((e) => parseInt(e)) || []
-
 export function exhentaiBot(bot: Telegraf) {
   bot.hears([galleryUrlRegex, galleryPageUrlRegex], async (ctx, next) => {
-    // 限制生效的群聊
-    const chatId = ctx.message.chat.id
-    if (!ALLOWED_GROUP.includes(chatId)) {
-      return
-    }
-
     let gid: number
     let gtoken: string
 

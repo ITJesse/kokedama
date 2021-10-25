@@ -1,18 +1,12 @@
-import { Telegraf } from 'telegraf'
 import axios from 'axios'
-import { search } from './utils'
+import { Telegraf } from 'telegraf'
 
-const ALLOWED_GROUP =
-  process.env.EXHENTAI_ALLOWED_GROUP?.split(',').map((e) => parseInt(e)) || []
+import { search } from './utils'
 
 export function saucenaoBot(bot: Telegraf) {
   bot.on('photo', async (ctx) => {
     const chatId = ctx.chat?.id
     if (!chatId) {
-      return
-    }
-    // 限制生效的群聊
-    if (!ALLOWED_GROUP.includes(chatId)) {
       return
     }
 
