@@ -93,3 +93,13 @@ export const galleryUrl = (gid: number, gtoken: string, expunged = false) =>
 
 export const tagUrl = (tag: string, expunged = false) =>
   `https://e${expunged ? 'x' : '-'}hentai.org/tag/${tag.split(' ').join('+')}`
+
+export const fmtFolderName = (title: string, gid: number) =>
+  `${title} [${gid}]`
+    .replace(/\//g, '')
+    .replace(/\|/g, '')
+    .replace(/&#039;/g, "'")
+    .replace(/&amp;/g, '&')
+    .replace(/  /g, ' ')
+    .replace(/\?/g, '')
+    .replace(/:/g, '')

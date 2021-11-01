@@ -2,15 +2,24 @@ import fs from 'fs'
 import path from 'path'
 import { Markup, Telegraf } from 'telegraf'
 
-import { EXHENTAI_DOWNLOADS } from '@/utils/consts'
+import { EXHENTAI_API_TASK_PREFIX, EXHENTAI_DOWNLOADS } from '@/utils/consts'
 import * as redis from '@/utils/redis'
 import { create7Zip } from '@/utils/zip'
 
 import {
-    galleryArchiveTemplate, galleryDoneTemplate, galleryDownloadTemplate, galleryMetaTemplate
+  galleryArchiveTemplate,
+  galleryDoneTemplate,
+  galleryDownloadTemplate,
+  galleryMetaTemplate,
 } from './templates'
-import { DownloadTaskPayload } from './types'
-import { exhentaiApi, galleryUrl, getGalleryMeta, getGalleryToken } from './utils'
+import { DownloadTaskPayload, DownloadTaskStatus } from './types'
+import {
+  exhentaiApi,
+  fmtFolderName,
+  galleryUrl,
+  getGalleryMeta,
+  getGalleryToken,
+} from './utils'
 
 const galleryUrlRegex = /https:\/\/e(x|-)hentai\.org\/g\/(\d+)\/([a-f0-9]+)\//i
 const galleryPageUrlRegex =
@@ -100,7 +109,9 @@ export function exhentaiBot(bot: Telegraf) {
         try {
           const data: DownloadTaskPayload = JSON.parse(task ?? '')
           const { msgId } = data
-          await ctx.tg.deleteMessage(groupId, msgId)
+          if (msgId) {
+            await ctx.tg.deleteMessage(groupId, msgId)
+          }
         } catch {}
 
         await redis.hset([
@@ -120,16 +131,11 @@ export const task = async (bot: Telegraf) => {
   const gids = Object.keys(tasks ?? {}).map((key) => parseInt(key))
 
   for (const gid of gids) {
-    const data: DownloadTaskPayload = JSON.parse(tasks[gid])
-    const title = data.meta.title_jpn ? data.meta.title_jpn : data.meta.title
-    const folderName = `${title} [${gid}]`
-      .replace(/\//g, '')
-      .replace(/\|/g, '')
-      .replace(/&#039;/g, "'")
-      .replace(/&amp;/g, '&')
-      .replace(/  /g, ' ')
-      .replace(/\?/g, '')
-      .replace(/:/g, '')
+    const { meta, groupId, msgId, taskId }: DownloadTaskPayload = JSON.parse(
+      tasks[gid],
+    )
+    const title = meta.title_jpn ? meta.title_jpn : meta.title
+    const folderName = fmtFolderName(title, gid)
     const folderPath = path.join(
       process.env.EXHENTAI_DOWNLOAD_PATH ?? '',
       folderName,
@@ -141,14 +147,27 @@ export const task = async (bot: Telegraf) => {
 
     if (list.includes('galleryinfo.txt')) {
       await redis.hdel([EXHENTAI_DOWNLOADS, `${gid}`])
-      await bot.telegram.editMessageText(
-        data.groupId,
-        data.msgId,
-        undefined,
-        galleryArchiveTemplate(title),
-        { parse_mode: 'HTML' },
-      )
-      const filepath = path.join(`${gid}`, data.meta.token, 'archive.7z')
+      if (groupId && msgId) {
+        await bot.telegram.editMessageText(
+          groupId,
+          msgId,
+          undefined,
+          galleryArchiveTemplate(title),
+          { parse_mode: 'HTML' },
+        )
+      }
+      if (taskId) {
+        const taskInfo: DownloadTaskStatus = {
+          status: 'archiving',
+          data: {},
+        }
+        await redis.setex(
+          `${EXHENTAI_API_TASK_PREFIX}${taskId}`,
+          3600,
+          JSON.stringify(taskInfo),
+        )
+      }
+      const filepath = path.join(`${gid}`, meta.token, 'archive.7z')
       const nfsFilePath = path.resolve(
         process.env.EXHENTAI_NFS_PATH ?? '',
         filepath,
@@ -157,30 +176,61 @@ export const task = async (bot: Telegraf) => {
         recursive: true,
       })
       const { filesize } = await create7Zip(nfsFilePath, folderPath)
-      await bot.telegram.deleteMessage(data.groupId, data.msgId)
-      await bot.telegram.sendMessage(
-        data.groupId,
-        galleryDoneTemplate(title, filesize),
-        {
-          parse_mode: 'HTML',
-          disable_web_page_preview: true,
-          reply_markup: Markup.inlineKeyboard([
-            Markup.button.url(
-              '下载',
-              `${process.env.EXHENTAI_NFS_BASEURL}/${filepath}`,
-            ),
-          ]).reply_markup,
-        },
-      )
+      if (groupId && msgId) {
+        await bot.telegram.deleteMessage(groupId, msgId)
+        await bot.telegram.sendMessage(
+          groupId,
+          galleryDoneTemplate(title, filesize),
+          {
+            parse_mode: 'HTML',
+            disable_web_page_preview: true,
+            reply_markup: Markup.inlineKeyboard([
+              Markup.button.url(
+                '下载',
+                `${process.env.EXHENTAI_NFS_BASEURL}/${filepath}`,
+              ),
+            ]).reply_markup,
+          },
+        )
+      }
+      if (taskId) {
+        const taskInfo: DownloadTaskStatus = {
+          status: 'done',
+          data: {
+            url: `${process.env.EXHENTAI_NFS_BASEURL}/${filepath}`,
+          },
+        }
+        await redis.setex(
+          `${EXHENTAI_API_TASK_PREFIX}${taskId}`,
+          3600,
+          JSON.stringify(taskInfo),
+        )
+      }
     } else {
-      const count = list.length - 1
-      await bot.telegram.editMessageText(
-        data.groupId,
-        data.msgId,
-        undefined,
-        galleryDownloadTemplate(title, count, parseInt(data.meta.filecount)),
-        { parse_mode: 'HTML' },
-      )
+      const count = Math.max(list.length - 1, 0)
+      if (groupId && msgId) {
+        await bot.telegram.editMessageText(
+          groupId,
+          msgId,
+          undefined,
+          galleryDownloadTemplate(title, count, parseInt(meta.filecount)),
+          { parse_mode: 'HTML' },
+        )
+      }
+      if (taskId) {
+        const taskInfo: DownloadTaskStatus = {
+          status: 'downloading',
+          data: {
+            total: parseInt(meta.filecount),
+            current: count,
+          },
+        }
+        await redis.setex(
+          `${EXHENTAI_API_TASK_PREFIX}${taskId}`,
+          3600,
+          JSON.stringify(taskInfo),
+        )
+      }
     }
   }
 }

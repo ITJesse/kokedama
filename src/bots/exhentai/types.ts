@@ -34,7 +34,27 @@ export type GalleryTokenResponse = {
 }
 
 export type DownloadTaskPayload = {
-  groupId: number
-  msgId: number
+  groupId?: number
+  msgId?: number
+  taskId?: string
   meta: GalleryMeta
 }
+
+export type DownloadTaskStatus =
+  | {
+      status: 'downloading'
+      data: {
+        total: number
+        current: number
+      }
+    }
+  | {
+      status: 'archiving'
+      data: {}
+    }
+  | {
+      status: 'done'
+      data: {
+        url: string
+      }
+    }
