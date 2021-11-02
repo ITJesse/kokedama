@@ -8,7 +8,7 @@ import { EXHENTAI_API_TASK_PREFIX, EXHENTAI_DOWNLOADS } from '@/utils/consts'
 import * as redis from '@/utils/redis'
 
 import { DownloadTaskPayload, DownloadTaskStatus, GalleryMeta } from './types'
-import { exhentaiApi, getGalleryMeta, getGalleryToken } from './utils'
+import { exhentaiApi, fmtMetaJson, getGalleryMeta, getGalleryToken } from './utils'
 
 const router = Router()
 
@@ -26,7 +26,7 @@ router.post('/preview/by_gallery_link', async (req, res) => {
   }
   const { gid, gtoken } = query.right
   const meta = await getGalleryMeta(gid, gtoken)
-  res.json({ success: true, data: meta })
+  res.json({ success: true, data: fmtMetaJson(meta) })
 })
 
 const PreviewPageQueryDecoder = io.type({
@@ -45,7 +45,7 @@ router.post('/preview/by_page_link', async (req, res) => {
   const { gid, ptoken, page } = query.right
   const { token } = await getGalleryToken(gid, ptoken, page)
   const meta = await getGalleryMeta(gid, token)
-  res.json({ success: true, data: meta, gtoken: token })
+  res.json({ success: true, data: fmtMetaJson(meta), gtoken: token })
 })
 
 router.post('/download', async (req, res) => {

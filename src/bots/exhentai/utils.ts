@@ -3,7 +3,7 @@ import emojiRegexRGI from 'emoji-regex'
 import fs from 'fs'
 import path from 'path'
 
-import { GalleryMetaResponse, GalleryTokenResponse } from './types'
+import { GalleryMeta, GalleryMetaResponse, GalleryTokenResponse } from './types'
 
 export const exhentaiApi = axios.create({
   headers: {
@@ -103,3 +103,9 @@ export const fmtFolderName = (title: string, gid: number) =>
     .replace(/  /g, ' ')
     .replace(/\?/g, '')
     .replace(/:/g, '')
+
+export const fmtMetaJson = (meta: GalleryMeta) => ({
+  ...meta,
+  category_zh: translateCategory(meta.category),
+  tags_zh: meta.tags.map((tag) => translateTag(tag).join(':')),
+})
