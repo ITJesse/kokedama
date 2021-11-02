@@ -113,6 +113,6 @@ export const fmtMetaJson = (meta: GalleryMeta) => ({
     if (!tag) {
       return null
     }
-    return translateTag(tag).join(': ')
+    return translateTag(tag)[1]
   })(),
 })
