@@ -108,4 +108,11 @@ export const fmtMetaJson = (meta: GalleryMeta) => ({
   ...meta,
   category_zh: translateCategory(meta.category),
   tags_zh: meta.tags.map((tag) => translateTag(tag).join(':')),
+  language: (() => {
+    const tag = meta.tags.find((tag) => tag.startsWith('language:'))
+    if (!tag) {
+      return null
+    }
+    return translateTag(tag).join(': ')
+  })(),
 })

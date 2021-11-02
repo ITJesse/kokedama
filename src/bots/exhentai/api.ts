@@ -26,7 +26,15 @@ router.post('/preview/by_gallery_link', async (req, res) => {
   }
   const { gid, gtoken } = query.right
   const meta = await getGalleryMeta(gid, gtoken)
-  res.json({ success: true, data: fmtMetaJson(meta) })
+  const { data: thumbnail } = await exhentaiApi.get(meta.thumb, {
+    responseType: 'arraybuffer',
+  })
+
+  res.json({
+    success: true,
+    data: fmtMetaJson(meta),
+    thumbnail: Buffer.from(thumbnail).toString('base64'),
+  })
 })
 
 const PreviewPageQueryDecoder = io.type({
@@ -45,7 +53,15 @@ router.post('/preview/by_page_link', async (req, res) => {
   const { gid, ptoken, page } = query.right
   const { token } = await getGalleryToken(gid, ptoken, page)
   const meta = await getGalleryMeta(gid, token)
-  res.json({ success: true, data: fmtMetaJson(meta), gtoken: token })
+  const { data: thumbnail } = await exhentaiApi.get(meta.thumb, {
+    responseType: 'arraybuffer',
+  })
+  res.json({
+    success: true,
+    data: fmtMetaJson(meta),
+    gtoken: token,
+    thumbnail: Buffer.from(thumbnail).toString('base64'),
+  })
 })
 
 router.post('/download', async (req, res) => {
