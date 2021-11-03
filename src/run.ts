@@ -88,6 +88,14 @@ app.use(morgan('combined'))
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
+app.use('/s/:gid/:gtoken', (req, res) => {
+  const { gid, gtoken } = req.params
+  res.redirect(
+    `${process.env.EXHENTAI_NFS_BASEURL}/${gid}/${gtoken}/archive.7z`,
+    301,
+  )
+})
+
 app.use((req, res, next) => {
   const auth = req.headers['x-kokedama-auth-key']
   if (!auth || auth !== process.env.API_KEY) {

@@ -7,19 +7,10 @@ import * as redis from '@/utils/redis'
 import { create7Zip } from '@/utils/zip'
 
 import {
-  galleryArchiveTemplate,
-  galleryDoneTemplate,
-  galleryDownloadTemplate,
-  galleryMetaTemplate,
+    galleryArchiveTemplate, galleryDoneTemplate, galleryDownloadTemplate, galleryMetaTemplate
 } from './templates'
 import { DownloadTaskPayload, DownloadTaskStatus } from './types'
-import {
-  exhentaiApi,
-  fmtFolderName,
-  galleryUrl,
-  getGalleryMeta,
-  getGalleryToken,
-} from './utils'
+import { exhentaiApi, fmtFolderName, galleryUrl, getGalleryMeta, getGalleryToken } from './utils'
 
 const galleryUrlRegex = /https:\/\/e(x|-)hentai\.org\/g\/(\d+)\/([a-f0-9]+)\//i
 const galleryPageUrlRegex =
@@ -197,7 +188,7 @@ export const task = async (bot: Telegraf) => {
         const taskInfo: DownloadTaskStatus = {
           status: 'done',
           data: {
-            url: `${process.env.EXHENTAI_NFS_BASEURL}/${filepath}`,
+            url: `${process.env.EXHENTAI_SHORTEN_BASEURL}/${gid}/${meta.token}`,
           },
         }
         await redis.setex(
