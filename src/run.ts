@@ -96,7 +96,7 @@ app.use('/s/:gid/:gtoken', (req, res) => {
   )
 })
 
-app.use((req, res, next) => {
+app.use('/api', (req, res, next) => {
   const auth = req.headers['x-kokedama-auth-key']
   if (!auth || auth !== process.env.API_KEY) {
     return res.status(401).json({ success: false, message: 'auth failed' })
