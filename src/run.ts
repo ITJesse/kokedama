@@ -25,7 +25,13 @@ bot.use(async (ctx, next) => {
     return
   }
   const start = Date.now()
-  await next()
+  try {
+    await next()
+  } catch {
+    if (chatId) {
+      await ctx.telegram.sendMessage(chatId, '发生错误')
+    }
+  }
   const ms = Date.now() - start
   console.log('Response time: %sms', ms)
 })

@@ -91,6 +91,7 @@ export const search = async (
     form,
     {
       headers: form.getHeaders(),
+      timeout: 5000,
     },
   )
 

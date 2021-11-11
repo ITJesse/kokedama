@@ -17,6 +17,7 @@ export function saucenaoBot(bot: Telegraf) {
     )
     const { data } = await axios.get(imageUrl.href, {
       responseType: 'arraybuffer',
+      timeout: 10000,
     })
     const result = (
       await search(data, {
