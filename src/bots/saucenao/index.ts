@@ -28,7 +28,6 @@ export function saucenaoBot(bot: Telegraf) {
     if (result.length === 0) {
       return next()
     }
-    console.log(result)
 
     const msg = result
       .slice(0, 4)
