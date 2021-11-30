@@ -26,7 +26,9 @@ export function qqBot(bot: Telegraf) {
       0,
       1,
     )
-    const profilePhoto = photos[0]?.[0]?.file_id
+    const profilePhoto = photos[0]?.sort(
+      (a, b) => a.width * a.height - b.width * b.height,
+    )[0].file_id
     let imageUrl = 'https://dummyimage.com/1x1/000/fff'
     if (profilePhoto) {
       const photoUrl = await bot.telegram.getFileLink(profilePhoto)
