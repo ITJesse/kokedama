@@ -20,7 +20,8 @@ export function qqBot(bot: Telegraf) {
     const username = getName(ctx.message.from)
 
     const message = `来自电报的消息\n---------------------------\n${username} 说：\n${ctx.message.text}`
-    await qq.sendMessage(message)
+    await qq.sendImage('https://dummyimage.com/1x1/000/fff', message)
+    // await qq.sendMessage(message)
     // await redis.setex(
     //   `${QQ_MSG_TO_TG_PREFIX}${message_id}`,
     //   24 * 60 * 60,
