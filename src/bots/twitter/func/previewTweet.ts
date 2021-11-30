@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { Markup, Telegraf } from 'telegraf'
+import { Context, Markup, Telegraf } from 'telegraf'
 
 import { getTweetById, getTweetUrl, getUserUrl } from '../utils'
 
@@ -10,7 +10,11 @@ export default async function previewTweet(
   replyMsgId?: number,
 ) {
   const tweet = await getTweetById(tweetId)
-  const images = tweet.includes.media?.map(
+  if (tweet.errors?.length > 0) {
+    console.error(tweet.errors)
+    return
+  }
+  const images = tweet.includes?.media?.map(
     (e: any) => e.url ?? e.preview_image_url,
   )
   const content = `${tweet.data.text}`

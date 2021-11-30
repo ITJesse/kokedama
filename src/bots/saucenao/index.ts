@@ -4,10 +4,10 @@ import { Telegraf } from 'telegraf'
 import { search } from './utils'
 
 export function saucenaoBot(bot: Telegraf) {
-  bot.on('photo', async (ctx) => {
+  bot.on('photo', async (ctx, next) => {
     const chatId = ctx.chat?.id
     if (!chatId) {
-      return
+      return next()
     }
 
     const imageUrl = await bot.telegram.getFileLink(
@@ -26,7 +26,7 @@ export function saucenaoBot(bot: Telegraf) {
       })
     ).filter((e) => e.similarity > 80)
     if (result.length === 0) {
-      return
+      return next()
     }
     console.log(result)
 
@@ -45,5 +45,6 @@ export function saucenaoBot(bot: Telegraf) {
       disable_web_page_preview: true,
       reply_to_message_id: ctx.message.message_id,
     })
+    next()
   })
 }

@@ -3,6 +3,7 @@ import { Telegraf } from 'telegraf'
 import { exhentaiBot } from './bots/exhentai'
 // import { groupBot } from './bots/group'
 import { infoBot } from './bots/info'
+import { qqBot } from './bots/qq'
 import { saucenaoBot } from './bots/saucenao'
 import { twitterBot } from './bots/twitter'
 import scheduler from './scheduler'
@@ -61,7 +62,11 @@ bot.on('callback_query', async (ctx, next) => {
       } catch {}
       break
     }
+    case 'nop': {
+      break
+    }
   }
+  await ctx.answerCbQuery('')
   next()
 })
 
@@ -70,6 +75,7 @@ twitterBot(bot)
 infoBot(bot)
 exhentaiBot(bot)
 saucenaoBot(bot)
+qqBot(bot)
 
 scheduler(bot)
 

@@ -1,13 +1,13 @@
 import { Markup, Telegraf } from 'telegraf'
 
+import { delay } from '@/utils'
+import { TWITTER_SENT_LIST } from '@/utils/consts'
 import * as redis from '@/utils/redis'
 
 import downloadTweetAll from './func/downloadTweetAll'
 import previewTweet from './func/previewTweet'
 import previewTweetAll from './func/previewTweetAll'
 import { getLikesByName } from './utils'
-import { TWITTER_SENT_LIST } from '@/utils/consts'
-import { delay } from '@/utils'
 
 export function twitterBot(bot: Telegraf) {
   bot.hears(
@@ -81,6 +81,7 @@ export function twitterBot(bot: Telegraf) {
         break
       }
     }
+    await ctx.answerCbQuery('Done')
     next()
   })
 }
