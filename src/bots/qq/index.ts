@@ -93,6 +93,10 @@ export function qqBot(bot: Telegraf) {
       return
     }
 
+    if (res.sender.user_id === 193468621) {
+      return
+    }
+
     const postType = res.post_type
 
     const username = `${res.sender.title ? `[${res.sender.title}]` : ''} ${
