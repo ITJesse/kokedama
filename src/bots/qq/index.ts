@@ -1,3 +1,5 @@
+import axios from 'axios'
+import sharp from 'sharp'
 import { Markup, Telegraf } from 'telegraf'
 import WebSocket from 'ws'
 
@@ -28,7 +30,17 @@ export function qqBot(bot: Telegraf) {
     let imageUrl = 'https://dummyimage.com/1x1/000/fff'
     if (profilePhoto) {
       const photoUrl = await bot.telegram.getFileLink(profilePhoto)
-      imageUrl = photoUrl.href
+      const { data } = await axios.get(photoUrl.href, {
+        responseType: 'arraybuffer',
+      })
+      imageUrl =
+        'base64://' +
+        (
+          await sharp(Buffer.from(data))
+            .resize(64, 64)
+            .toFormat('png')
+            .toBuffer()
+        ).toString('base64')
     }
     const message = `\n来自电报的消息\n---------------------------\n${username} 说：\n${ctx.message.text}`
     await qq.sendImage(imageUrl, message)
