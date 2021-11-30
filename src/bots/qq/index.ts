@@ -5,6 +5,7 @@ import WebSocket from 'ws'
 
 import { getName } from '@/utils'
 import { QQ_MSG_TO_TG_PREFIX, TG_MSG_TO_QQ_PREFIX } from '@/utils/consts'
+import { getUrl, signUrl, upload, uploadBuf } from '@/utils/oss'
 import * as redis from '@/utils/redis'
 
 import * as qq from './utils'
@@ -35,15 +36,14 @@ export function qqBot(bot: Telegraf) {
       const { data } = await axios.get(photoUrl.href, {
         responseType: 'arraybuffer',
       })
-      imageUrl =
-        'base64://' +
-        (
-          await sharp(Buffer.from(data))
-            .resize(64, 64)
-            .toFormat('png')
-            .toBuffer()
-        ).toString('base64')
+      const buf = await sharp(Buffer.from(data))
+        .resize(48, 48)
+        .toFormat('jpg', { mozjpeg: true, quality: 95 })
+        .toBuffer()
+      const fileKey = await uploadBuf(`profilePhoto.png`, buf)
+      imageUrl = signUrl(fileKey)
     }
+    console.log(imageUrl)
     const message = `\n来自电报的消息\n---------------------------\n${username} 说：\n${ctx.message.text}`
     await qq.sendImage(imageUrl, message)
     // await qq.sendMessage(message)
