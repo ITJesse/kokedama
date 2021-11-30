@@ -1,9 +1,6 @@
-import express from 'express'
-import morgan from 'morgan'
 import { Telegraf } from 'telegraf'
 
 import { exhentaiBot } from './bots/exhentai'
-import exhentaiApi from './bots/exhentai/api'
 // import { groupBot } from './bots/group'
 import { infoBot } from './bots/info'
 import { saucenaoBot } from './bots/saucenao'
@@ -27,7 +24,8 @@ bot.use(async (ctx, next) => {
   const start = Date.now()
   try {
     await next()
-  } catch {
+  } catch (err) {
+    console.error(err)
     if (chatId) {
       await ctx.telegram.sendMessage(chatId, '发生错误')
     }
@@ -85,32 +83,3 @@ const stop = async () => {
 }
 process.once('SIGINT', stop)
 process.once('SIGTERM', stop)
-
-// API Server
-const app = express()
-const port = process.env.PORT ?? 3000
-
-app.use(morgan('combined'))
-app.use(express.json())
-app.use(express.urlencoded({ extended: true }))
-
-app.use('/s/:gid/:gtoken', (req, res) => {
-  const { gid, gtoken } = req.params
-  res.redirect(
-    `${process.env.EXHENTAI_NFS_BASEURL}/${gid}/${gtoken}/archive.7z`,
-    301,
-  )
-})
-
-app.use('/api', (req, res, next) => {
-  const auth = req.headers['x-kokedama-auth-key']
-  if (!auth || auth !== process.env.API_KEY) {
-    return res.status(401).json({ success: false, message: 'auth failed' })
-  }
-  next()
-})
-app.use('/api', exhentaiApi)
-
-app.listen(port, () => {
-  console.log(`API server listening at http://localhost:${port}`)
-})

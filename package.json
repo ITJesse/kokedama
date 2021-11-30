@@ -2,10 +2,10 @@
   "name": "tg-welcome-bot",
   "version": "1.0.0",
   "description": "",
-  "main": "run.js",
+  "main": "bootstrap.js",
   "scripts": {
-    "start": "node -r dotenv/config -r module-alias/register dist/run.js",
-    "dev": "nodemon src/run.ts"
+    "start": "node -r dotenv/config -r module-alias/register dist/bootstrap.js",
+    "dev": "nodemon src/bootstrap.ts"
   },
   "author": "",
   "license": "ISC",

@@ -25,7 +25,11 @@ export interface SagiriResult {
   raw: Result
 }
 
-const limiter = new RateLimiter({ tokensPerInterval: 10, interval: 30000 })
+const limiter30s = new RateLimiter({ tokensPerInterval: 6, interval: 30000 })
+const limiter1h = new RateLimiter({
+  tokensPerInterval: 200,
+  interval: 60 * 60 * 1000,
+})
 
 export const generateMask = (masks: number[]): number =>
   masks.reduce(
@@ -63,8 +67,9 @@ export const search = async (
   file: Buffer,
   options?: Options,
 ): Promise<SagiriResult[]> => {
-  const remaining = await limiter.removeTokens(1)
-  if (remaining < 0) {
+  const remaining30s = await limiter30s.removeTokens(1)
+  const remaining1h = await limiter1h.removeTokens(1)
+  if (remaining30s < 0 || remaining1h < 0) {
     throw new Error('rate limit')
   }
   const form = new FormData()
