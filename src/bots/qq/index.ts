@@ -20,12 +20,12 @@ export function qqBot(bot: Telegraf) {
     const username = getName(ctx.message.from)
 
     const message = `来自电报的消息\n---------------------------\n${username} 说：\n${ctx.message.text}`
-    const { message_id } = await qq.sendMessage(message)
-    await redis.setex(
-      `${QQ_MSG_TO_TG_PREFIX}${message_id}`,
-      24 * 60 * 60,
-      `${ctx.message.message_id}`,
-    )
+    await qq.sendMessage(message)
+    // await redis.setex(
+    //   `${QQ_MSG_TO_TG_PREFIX}${message_id}`,
+    //   24 * 60 * 60,
+    //   `${ctx.message.message_id}`,
+    // )
     next()
   })
 
@@ -46,12 +46,12 @@ export function qqBot(bot: Telegraf) {
     const message =
       `来自电报的消息\n---------------------------\n${username} 说：\n[CQ:image,file=${imageUrl.href}]` +
       (ctx.message.caption ? `\n${ctx.message.caption}` : '')
-    const { message_id } = await qq.sendMessage(message)
-    await redis.setex(
-      `${QQ_MSG_TO_TG_PREFIX}${message_id}`,
-      24 * 60 * 60,
-      `${ctx.message.message_id}`,
-    )
+    await qq.sendMessage(message)
+    // await redis.setex(
+    //   `${QQ_MSG_TO_TG_PREFIX}${message_id}`,
+    //   24 * 60 * 60,
+    //   `${ctx.message.message_id}`,
+    // )
     next()
   })
 
