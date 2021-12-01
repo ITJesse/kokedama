@@ -3,7 +3,7 @@ import sharp from 'sharp'
 import { Markup, Telegraf } from 'telegraf'
 import WebSocket from 'ws'
 
-import { getName, getProfilePhoto } from '@/utils'
+import { getName, getProfilePhoto, sendImage } from '@/utils'
 import { QQ_MSG_TO_TG_PREFIX, TG_MSG_TO_QQ_PREFIX } from '@/utils/consts'
 import * as redis from '@/utils/redis'
 
@@ -119,15 +119,35 @@ export function qqBot(bot: Telegraf) {
     if (postType === 'message') {
       const images = res.message.filter((e: any) => e.type === 'image')
       const texts = res.message.filter((e: any) => e.type === 'text')
-      if (images.length === 1) {
-        await bot.telegram.sendPhoto(
+
+      const gifs: any[] = []
+      const trueImages: any[] = []
+      for (const image of images) {
+        const { headers } = await axios.head(image.data.url)
+        const mime = headers['content-type']
+        if (mime.includes('gif')) {
+          gifs.push(image)
+        } else {
+          trueImages.push(image)
+        }
+      }
+
+      for (const gif of gifs) {
+        await bot.telegram.sendAnimation(
           process.env.TELEGRAM_GROUP_ID ?? 0,
-          images[0].data.url,
+          gif.data.url,
         )
       }
-      if (images.length > 1) {
-        for (let i = 0; i < images.length; i += 10) {
-          const imagesToSend = images.slice(i, i + 10)
+
+      if (trueImages.length === 1) {
+        await bot.telegram.sendPhoto(
+          process.env.TELEGRAM_GROUP_ID ?? 0,
+          trueImages[0].data.url,
+        )
+      }
+      if (trueImages.length > 1) {
+        for (let i = 0; i < trueImages.length; i += 10) {
+          const imagesToSend = trueImages.slice(i, i + 10)
           await bot.telegram.sendMediaGroup(
             process.env.TELEGRAM_GROUP_ID ?? 0,
             imagesToSend.map((e: any) => ({
@@ -159,5 +179,6 @@ export function qqBot(bot: Telegraf) {
       //   `${res.message_id}`,
       // )
     }
+    // console.log(res.message[0])
   })
 }
