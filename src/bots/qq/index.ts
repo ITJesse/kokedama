@@ -95,6 +95,50 @@ export function qqBot(bot: Telegraf) {
     next()
   })
 
+  bot.on('video', async (ctx, next) => {
+    const chatId = ctx.chat.id
+    if (
+      `${chatId}` !== process.env.TELEGRAM_GROUP_ID ||
+      ctx.message.from.is_bot
+    ) {
+      return next()
+    }
+    const profilePhoto = await getProfilePhoto(bot, ctx.message.from.id)
+    const videoUrl = await bot.telegram.getFileLink(ctx.message.video.file_id)
+    const username = getName(ctx.message.from)
+    const message = buildQQMessage({
+      profilePhoto,
+      username,
+      message: ctx.message.caption ? `\n${ctx.message.caption}` : '',
+    })
+    await qq.sendMessage(message)
+    await qq.sendMessage(`[CQ:video,file=${videoUrl.href},c=3]`)
+    next()
+  })
+
+  bot.on('animation', async (ctx, next) => {
+    const chatId = ctx.chat.id
+    if (
+      `${chatId}` !== process.env.TELEGRAM_GROUP_ID ||
+      ctx.message.from.is_bot
+    ) {
+      return next()
+    }
+    const profilePhoto = await getProfilePhoto(bot, ctx.message.from.id)
+    const videoUrl = await bot.telegram.getFileLink(
+      ctx.message.animation.file_id,
+    )
+    const username = getName(ctx.message.from)
+    const message = buildQQMessage({
+      profilePhoto,
+      username,
+      message: ctx.message.caption ? `\n${ctx.message.caption}` : '',
+    })
+    await qq.sendMessage(message)
+    await qq.sendMessage(`[CQ:video,file=${videoUrl.href}]`)
+    next()
+  })
+
   const ws: WebSocket = new WebSocket(process.env.CQHTTP_WS_ENDPOINT ?? '')
 
   ws.on('open', () => console.log('CQHTTP WebSocket connected'))
@@ -117,6 +161,7 @@ export function qqBot(bot: Telegraf) {
       res.sender.nickname
     }`
     if (postType === 'message') {
+      const videos = res.message.filter((e: any) => e.type === 'video')
       const images = res.message.filter((e: any) => e.type === 'image')
       const texts = res.message.filter((e: any) => e.type === 'text')
 
@@ -130,6 +175,15 @@ export function qqBot(bot: Telegraf) {
         } else {
           trueImages.push(image)
         }
+      }
+
+      for (const video of videos) {
+        const { data } = await axios.get(video.data.url, {
+          responseType: 'arraybuffer',
+        })
+        await bot.telegram.sendVideo(process.env.TELEGRAM_GROUP_ID ?? 0, {
+          source: Buffer.from(data),
+        })
       }
 
       for (const gif of gifs) {
@@ -179,6 +233,6 @@ export function qqBot(bot: Telegraf) {
       //   `${res.message_id}`,
       // )
     }
-    // console.log(res.message[0])
+    console.log(res.message[0])
   })
 }
