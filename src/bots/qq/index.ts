@@ -147,20 +147,18 @@ export function qqBot(bot: Telegraf) {
     const res = JSON.parse(data.toString())
     const message_type = res.message_type
     const group_id = res.group_id
-    if (message_type !== 'group' || `${group_id}` !== process.env.QQ_GROUP_ID) {
-      return
-    }
 
-    if (res.sender.user_id === 193468621) {
-      return
-    }
+    if (message_type === 'group' && `${group_id}` === process.env.QQ_GROUP_ID) {
+      if (res.post_type !== 'message') {
+        return
+      }
+      if (res.sender.user_id === 193468621) {
+        return
+      }
 
-    const postType = res.post_type
-
-    const username = `${res.sender.title ? `[${res.sender.title}]` : ''} ${
-      res.sender.nickname
-    }`
-    if (postType === 'message') {
+      const username = `${res.sender.title ? `[${res.sender.title}]` : ''} ${
+        res.sender.nickname
+      }`
       const videos = res.message.filter((e: any) => e.type === 'video')
       const images = res.message.filter((e: any) => e.type === 'image')
       const texts = res.message.filter((e: any) => e.type === 'text')
@@ -182,18 +180,39 @@ export function qqBot(bot: Telegraf) {
       }
 
       for (const video of videos) {
+        const { message_id } = await bot.telegram.sendMessage(
+          process.env.TELEGRAM_GROUP_ID ?? 0,
+          '正在发送视频...',
+        )
         const { data } = await axios.get(video.data.url, {
           responseType: 'arraybuffer',
         })
-        await bot.telegram.sendVideo(process.env.TELEGRAM_GROUP_ID ?? 0, {
-          source: Buffer.from(data),
-        })
+        const { width, height } = await qq.getVideoDimensions(Buffer.from(data))
+        await bot.telegram.sendVideo(
+          process.env.TELEGRAM_GROUP_ID ?? 0,
+          {
+            source: Buffer.from(data),
+          },
+          { width, height },
+        )
+        await bot.telegram.deleteMessage(
+          process.env.TELEGRAM_GROUP_ID ?? 0,
+          message_id,
+        )
       }
 
       for (const gif of gifs) {
+        const { message_id } = await bot.telegram.sendMessage(
+          process.env.TELEGRAM_GROUP_ID ?? 0,
+          '正在发送视频...',
+        )
         await bot.telegram.sendAnimation(
           process.env.TELEGRAM_GROUP_ID ?? 0,
           gif.data.url,
+        )
+        await bot.telegram.deleteMessage(
+          process.env.TELEGRAM_GROUP_ID ?? 0,
+          message_id,
         )
       }
 
@@ -236,7 +255,49 @@ export function qqBot(bot: Telegraf) {
       //   24 * 60 * 60,
       //   `${res.message_id}`,
       // )
+      // console.log(res)
     }
-    console.log(res.message[0])
+
+    if (res.post_type === 'notice' && res.notice_type === 'group_upload') {
+      // console.log(res)
+      if (
+        !/\.mp4$/i.test(res.file?.name) ||
+        res.file?.size > 50 * 1024 * 1024
+      ) {
+        return
+      }
+      const { nickname, title } = await qq.getGroupMemberInfo(res.user_id)
+      const username = `${title ? `[${title}]` : ''} ${nickname}`
+      const { message_id } = await bot.telegram.sendMessage(
+        process.env.TELEGRAM_GROUP_ID ?? 0,
+        '正在发送视频...',
+      )
+      const { data } = await axios.get(res.file.url, {
+        responseType: 'arraybuffer',
+      })
+      const { width, height } = await qq.getVideoDimensions(Buffer.from(data))
+      await bot.telegram.sendVideo(
+        process.env.TELEGRAM_GROUP_ID ?? 0,
+        {
+          source: Buffer.from(data),
+        },
+        { width, height },
+      )
+      await bot.telegram.deleteMessage(
+        process.env.TELEGRAM_GROUP_ID ?? 0,
+        message_id,
+      )
+      const message = `<b>${username}</b>`
+      await bot.telegram.sendMessage(
+        process.env.TELEGRAM_GROUP_ID ?? 0,
+        message,
+        {
+          parse_mode: 'HTML',
+          reply_markup: Markup.inlineKeyboard([
+            [Markup.button.callback(`来自QQ的消息`, 'nop')],
+          ]).reply_markup,
+        },
+      )
+    }
   })
 }

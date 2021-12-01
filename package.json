@@ -26,6 +26,7 @@
     "limiter": "^2.1.0",
     "module-alias": "^2.2.2",
     "morgan": "^1.10.0",
+    "mz": "^2.7.0",
     "node-7z": "^2.1.2",
     "node-telegram-bot-api": "^0.51.0",
     "objectid64": "^1.0.3",
@@ -38,6 +39,7 @@
   },
   "devDependencies": {
     "@types/ali-oss": "^6.0.8",
+    "@types/mz": "^2.7.4",
     "@types/node": "^16.0.0",
     "@types/node-7z": "^2.1.1",
     "@types/redis": "^2.8.28",

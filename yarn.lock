@@ -105,6 +105,13 @@
   dependencies:
     "@types/node" "*"
 
+"@types/mz@^2.7.4":
+  version "2.7.4"
+  resolved "https://registry.yarnpkg.com/@types/mz/-/mz-2.7.4.tgz#f9d1535cb5171199b28ae6abd6ec29e856551401"
+  integrity sha512-Zs0imXxyWT20j3Z2NwKpr0IO2LmLactBblNyLua5Az4UHuqOQ02V3jPTgyKwDkuc33/ahw+C3O1PIZdrhFMuQA==
+  dependencies:
+    "@types/node" "*"
+
 "@types/node-7z@^2.1.1":
   version "2.1.1"
   resolved "https://registry.yarnpkg.com/@types/node-7z/-/node-7z-2.1.1.tgz#dd04cde015c854913fcf61185707322a2c8c06ff"
