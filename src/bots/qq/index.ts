@@ -28,7 +28,7 @@ export function qqBot(bot: Telegraf) {
       username,
       message: ctx.message.text,
     })
-    await qq.sendImage(profilePhoto, message)
+    await qq.sendMessage(message)
     // await qq.sendMessage(message)
     // await redis.setex(
     //   `${QQ_MSG_TO_TG_PREFIX}${message_id}`,
