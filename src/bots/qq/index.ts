@@ -54,10 +54,7 @@ export function qqBot(bot: Telegraf) {
     const { data } = await axios.get(stickerUrl.href, {
       responseType: 'arraybuffer',
     })
-    const buf = await sharp(data)
-      .resize(128, 128, { fit: 'contain' })
-      .toFormat('png')
-      .toBuffer()
+    const buf = await sharp(data).toFormat('png').toBuffer()
     const message = buildQQMessage({
       profilePhoto,
       username,
