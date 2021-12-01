@@ -6,8 +6,7 @@ export const buildQQMessage = ({
   profilePhoto: string
   username: string
   message: string
-}) => `[CQ:image,file=${profilePhoto}]
-来自电报的消息
+}) => `来自电报的消息
 ---------------------------
-${username} 说：
+[CQ:image,file=${profilePhoto}]${username} 说：
 ${message}`
