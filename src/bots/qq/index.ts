@@ -165,6 +165,10 @@ export function qqBot(bot: Telegraf) {
       const images = res.message.filter((e: any) => e.type === 'image')
       const texts = res.message.filter((e: any) => e.type === 'text')
 
+      if (texts.some((e: any) => qq.hasBlacklistedWord(e.data.text))) {
+        return
+      }
+
       const gifs: any[] = []
       const trueImages: any[] = []
       for (const image of images) {

@@ -26,3 +26,8 @@ export const replyMessage = (replyTo: number, message: string) =>
 
 export const sendImage = (imageUrl: string, message: string) =>
   sendMessage(`[CQ:image,file=${imageUrl}]${message}`)
+
+const blacklist = ['/dl', '/src', '/hso', '/now', '/temp', 'xu1s.com']
+export const hasBlacklistedWord = (str: string) => {
+  return blacklist.some((e) => str.includes(e))
+}
