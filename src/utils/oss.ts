@@ -61,6 +61,22 @@ export const uploadBuf = async (
   return fileKey
 }
 
+export const uploadWithPath = async (
+  fileKey: string,
+  buf: Buffer,
+): Promise<string> => {
+  await store.put(fileKey, buf)
+  return fileKey
+}
+
+export const fileKeyExists = async (fileKey: string) => {
+  try {
+    await store.head(fileKey)
+    return true
+  } catch {}
+  return false
+}
+
 export const download = async (fileKey: string): Promise<Buffer> => {
   const { content } = await store.get(fileKey)
   return content

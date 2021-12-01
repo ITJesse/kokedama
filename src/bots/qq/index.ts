@@ -3,11 +3,11 @@ import sharp from 'sharp'
 import { Markup, Telegraf } from 'telegraf'
 import WebSocket from 'ws'
 
-import { getName } from '@/utils'
+import { getName, getProfilePhoto } from '@/utils'
 import { QQ_MSG_TO_TG_PREFIX, TG_MSG_TO_QQ_PREFIX } from '@/utils/consts'
-import { getUrl, signUrl, upload, uploadBuf } from '@/utils/oss'
 import * as redis from '@/utils/redis'
 
+import { buildQQMessage } from './templates'
 import * as qq from './utils'
 
 export function qqBot(bot: Telegraf) {
@@ -21,37 +21,46 @@ export function qqBot(bot: Telegraf) {
     }
 
     const username = getName(ctx.message.from)
+    const profilePhoto = await getProfilePhoto(bot, ctx.message.from.id)
 
-    const { photos } = await bot.telegram.getUserProfilePhotos(
-      ctx.message.from.id,
-      0,
-      1,
-    )
-    const profilePhoto = photos[0]?.sort(
-      (a, b) => a.width * a.height - b.width * b.height,
-    )[0].file_id
-    let imageUrl = 'https://dummyimage.com/1x1/000/fff'
-    if (profilePhoto) {
-      const photoUrl = await bot.telegram.getFileLink(profilePhoto)
-      const { data } = await axios.get(photoUrl.href, {
-        responseType: 'arraybuffer',
-      })
-      const buf = await sharp(Buffer.from(data))
-        .resize(48, 48)
-        .toFormat('jpg', { mozjpeg: true, quality: 95 })
-        .toBuffer()
-      const fileKey = await uploadBuf(`profilePhoto.png`, buf)
-      imageUrl = signUrl(fileKey)
-    }
-    console.log(imageUrl)
-    const message = `\n来自电报的消息\n---------------------------\n${username} 说：\n${ctx.message.text}`
-    await qq.sendImage(imageUrl, message)
+    const message = buildQQMessage({
+      profilePhoto,
+      username,
+      message: ctx.message.text,
+    })
+    await qq.sendImage(profilePhoto, message)
     // await qq.sendMessage(message)
     // await redis.setex(
     //   `${QQ_MSG_TO_TG_PREFIX}${message_id}`,
     //   24 * 60 * 60,
     //   `${ctx.message.message_id}`,
     // )
+    next()
+  })
+
+  bot.on('sticker', async (ctx, next) => {
+    const chatId = ctx.chat.id
+    if (
+      `${chatId}` !== process.env.TELEGRAM_GROUP_ID ||
+      ctx.message.from.is_bot
+    ) {
+      return next()
+    }
+    const username = getName(ctx.message.from)
+    const profilePhoto = await getProfilePhoto(bot, ctx.message.from.id)
+    const stickerUrl = await bot.telegram.getFileLink(
+      ctx.message.sticker.thumb?.file_id ?? ctx.message.sticker.file_id,
+    )
+    const { data } = await axios.get(stickerUrl.href, {
+      responseType: 'arraybuffer',
+    })
+    const buf = await sharp(data).resize(128, 128).toFormat('png').toBuffer()
+    const message = buildQQMessage({
+      profilePhoto,
+      username,
+      message: `[CQ:image,file=base64://${buf.toString('base64')}]`,
+    })
+    await qq.sendMessage(message)
     next()
   })
 
@@ -63,15 +72,20 @@ export function qqBot(bot: Telegraf) {
     ) {
       return next()
     }
+    const profilePhoto = await getProfilePhoto(bot, ctx.message.from.id)
     const imageUrl = await bot.telegram.getFileLink(
       ctx.message.photo.sort(
         (a, b) => b.width * b.height - a.width * a.height,
       )[0].file_id,
     )
     const username = getName(ctx.message.from)
-    const message =
-      `来自电报的消息\n---------------------------\n${username} 说：\n[CQ:image,file=${imageUrl.href}]` +
-      (ctx.message.caption ? `\n${ctx.message.caption}` : '')
+    const message = buildQQMessage({
+      profilePhoto,
+      username,
+      message:
+        `[CQ:image,file=${imageUrl.href}]` +
+        (ctx.message.caption ? `\n${ctx.message.caption}` : ''),
+    })
     await qq.sendMessage(message)
     // await redis.setex(
     //   `${QQ_MSG_TO_TG_PREFIX}${message_id}`,
@@ -139,11 +153,11 @@ export function qqBot(bot: Telegraf) {
           ]).reply_markup,
         },
       )
-      await redis.setex(
-        `${TG_MSG_TO_QQ_PREFIX}${message_id}`,
-        24 * 60 * 60,
-        `${res.message_id}`,
-      )
+      // await redis.setex(
+      //   `${TG_MSG_TO_QQ_PREFIX}${message_id}`,
+      //   24 * 60 * 60,
+      //   `${res.message_id}`,
+      // )
     }
   })
 }
