@@ -1,5 +1,5 @@
 import axios from 'axios'
-import sharp from 'sharp'
+import gm, { ResizeOption } from 'gm'
 import { Telegraf } from 'telegraf'
 
 import { fileKeyExists, signUrl, uploadWithPath } from './oss'
@@ -19,6 +19,22 @@ export const getName = ({
   return name
 }
 
+export const resizeImage = (
+  image: Buffer,
+  size: { width: number; height?: number; opt?: ResizeOption },
+): Promise<Buffer> => {
+  return new Promise((resolve, reject) => {
+    gm(image)
+      .resize(size.width, size.height, size.opt)
+      .units('undefined')
+      .density(0, 0)
+      .toBuffer('png', (err, buf) => {
+        if (err) return reject(err)
+        resolve(buf)
+      })
+  })
+}
+
 export const getProfilePhoto = async (bot: Telegraf, userId: number) => {
   let imageUrl = 'https://dummyimage.com/1x1/000/fff'
   const fileKey = `/profile/photo/${userId}_48.jpg`
@@ -35,10 +51,7 @@ export const getProfilePhoto = async (bot: Telegraf, userId: number) => {
     const { data } = await axios.get(photoUrl.href, {
       responseType: 'arraybuffer',
     })
-    const buf = await sharp(Buffer.from(data))
-      .resize(48, 48)
-      .toFormat('jpg', { mozjpeg: true, quality: 95 })
-      .toBuffer()
+    const buf = await resizeImage(Buffer.from(data), { width: 48, height: 48 })
     await uploadWithPath(fileKey, buf)
     imageUrl = signUrl(fileKey)
   }

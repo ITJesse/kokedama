@@ -1,9 +1,8 @@
 import axios from 'axios'
-import sharp from 'sharp'
 import { Markup, Telegraf } from 'telegraf'
 import WebSocket from 'ws'
 
-import { getName, getProfilePhoto, sendImage } from '@/utils'
+import { getName, getProfilePhoto, resizeImage, sendImage } from '@/utils'
 import { QQ_MSG_TO_TG_PREFIX, TG_MSG_TO_QQ_PREFIX } from '@/utils/consts'
 import * as redis from '@/utils/redis'
 
@@ -54,7 +53,7 @@ export function qqBot(bot: Telegraf) {
     const { data } = await axios.get(stickerUrl.href, {
       responseType: 'arraybuffer',
     })
-    const buf = await sharp(data).toFormat('png').toBuffer()
+    const buf = await resizeImage(data, { width: 128 })
     const message = buildQQMessage({
       profilePhoto,
       username,
@@ -163,6 +162,12 @@ export function qqBot(bot: Telegraf) {
       const images = res.message.filter((e: any) => e.type === 'image')
       const texts = res.message.filter((e: any) => e.type === 'text')
 
+      const content = texts.map((e: any) => e.data.text).join('')
+      const message =
+        content.length > 0
+          ? `<b>${username} 说：</b>\n${content}`
+          : `<b>${username}</b>`
+
       if (texts.some((e: any) => qq.hasBlacklistedWord(e.data.text))) {
         return
       }
@@ -235,11 +240,6 @@ export function qqBot(bot: Telegraf) {
         }
       }
 
-      const content = texts.map((e: any) => e.data.text).join('')
-      const message =
-        content.length > 0
-          ? `<b>${username} 说：</b>\n${content}`
-          : `<b>${username}</b>`
       const { message_id } = await bot.telegram.sendMessage(
         process.env.TELEGRAM_GROUP_ID ?? 0,
         message,

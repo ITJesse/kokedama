@@ -22,6 +22,7 @@
     "file-type": "^16.3.0",
     "form-data": "^4.0.0",
     "fp-ts": "^2.11.5",
+    "gm": "^1.23.1",
     "io-ts": "^2.2.16",
     "limiter": "^2.1.0",
     "module-alias": "^2.2.2",
@@ -39,6 +40,7 @@
   },
   "devDependencies": {
     "@types/ali-oss": "^6.0.8",
+    "@types/gm": "^1.18.10",
     "@types/mz": "^2.7.4",
     "@types/node": "^16.0.0",
     "@types/node-7z": "^2.1.1",
