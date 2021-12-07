@@ -14,7 +14,6 @@ const ALLOWED_GROUP =
   process.env.ALLOWED_GROUP?.split(',').map((e) => parseInt(e)) || []
 
 bot.use(async (ctx, next) => {
-  const userId = ctx.from?.id
   const chatId = ctx.chat?.id
   if (chatId && !ALLOWED_GROUP.includes(chatId)) {
     try {
@@ -24,7 +23,7 @@ bot.use(async (ctx, next) => {
     return
   }
   if (
-    ctx.senderChat?.id !== process.env.TELEGRAM_CHANNEL_ID &&
+    `${ctx.senderChat?.id}` !== process.env.TELEGRAM_CHANNEL_ID &&
     ctx.senderChat?.type === 'channel' &&
     chatId
   ) {
