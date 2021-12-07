@@ -51,7 +51,7 @@ export const getProfilePhoto = async (bot: Telegraf, userId: number) => {
     const { data } = await axios.get(photoUrl.href, {
       responseType: 'arraybuffer',
     })
-    const buf = await resizeImage(Buffer.from(data), { width: 48, height: 48 })
+    const buf = await resizeImage(Buffer.from(data), { width: 32, height: 32 })
     await uploadWithPath(fileKey, buf)
     imageUrl = signUrl(fileKey)
   }
