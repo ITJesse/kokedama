@@ -25,7 +25,11 @@ bot.use(async (ctx, next) => {
   }
   if (userId === 777000 && chatId) {
     await ctx.telegram.deleteMessage(chatId, ctx.message?.message_id ?? 0)
-    await ctx.telegram.sendMessage(chatId, '请不要用频道身份发言')
+    const { message_id } = await ctx.telegram.sendMessage(
+      chatId,
+      '请不要用频道身份发言',
+    )
+    setTimeout(() => ctx.telegram.deleteMessage(chatId, message_id), 15000)
   }
   if (userId === 777000) {
     return
