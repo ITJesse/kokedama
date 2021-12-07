@@ -10,23 +10,23 @@ const welcom = fs
   .toString()
 
 export function groupBot(bot: Telegraf) {
-  bot.on('text', async (ctx, next) => {
-    const groupId = ctx.message.chat.id
-    // 标记活跃用户
-    if (!groupId) {
-      return next()
-    }
-    const fromId = ctx.update.message?.from?.id
-    if (!fromId) {
-      return next()
-    }
-    await redis.hset([
-      `${GROUP_MEMBER_PREFIX}${groupId}`,
-      `${fromId}`,
-      `${Date.now()}`,
-    ])
-    next()
-  })
+  // bot.on('text', async (ctx, next) => {
+  //   const groupId = ctx.message.chat.id
+  //   // 标记活跃用户
+  //   if (!groupId) {
+  //     return next()
+  //   }
+  //   const fromId = ctx.update.message?.from?.id
+  //   if (!fromId) {
+  //     return next()
+  //   }
+  //   await redis.hset([
+  //     `${GROUP_MEMBER_PREFIX}${groupId}`,
+  //     `${fromId}`,
+  //     `${Date.now()}`,
+  //   ])
+  //   next()
+  // })
 
   bot.on('new_chat_members', (ctx, next) => {
     const groupId = ctx.chat?.id
@@ -46,11 +46,11 @@ export function groupBot(bot: Telegraf) {
             parse_mode: 'MarkdownV2',
           })
         }
-        await redis.hset([
-          `${GROUP_MEMBER_PREFIX}${groupId}`,
-          `${m.id}`,
-          `${Date.now()}`,
-        ])
+        // await redis.hset([
+        //   `${GROUP_MEMBER_PREFIX}${groupId}`,
+        //   `${m.id}`,
+        //   `${Date.now()}`,
+        // ])
       })
     next()
   })
@@ -65,7 +65,17 @@ export function groupBot(bot: Telegraf) {
     if (!fromId || ctx.update.message?.left_chat_member?.is_bot) {
       return next()
     }
-    await redis.hdel([`${GROUP_MEMBER_PREFIX}${groupId}`, `${fromId}`])
+    // await redis.hdel([`${GROUP_MEMBER_PREFIX}${groupId}`, `${fromId}`])
+    next()
+  })
+
+  bot.on('message', async (ctx, next) => {
+    const userId = ctx.update.message.from.id
+    if (userId === 777000) {
+      console.log('delete', ctx.update.message.message_id)
+      await ctx.deleteMessage(ctx.update.message.message_id)
+      console.log('deleted')
+    }
     next()
   })
 }

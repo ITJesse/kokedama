@@ -1,7 +1,7 @@
 import { Telegraf } from 'telegraf'
 
 import { exhentaiBot } from './bots/exhentai'
-// import { groupBot } from './bots/group'
+import { groupBot } from './bots/group'
 import { infoBot } from './bots/info'
 import { qqBot } from './bots/qq'
 import { saucenaoBot } from './bots/saucenao'
@@ -14,12 +14,20 @@ const ALLOWED_GROUP =
   process.env.ALLOWED_GROUP?.split(',').map((e) => parseInt(e)) || []
 
 bot.use(async (ctx, next) => {
+  const userId = ctx.from?.id
   const chatId = ctx.chat?.id
   if (chatId && !ALLOWED_GROUP.includes(chatId)) {
     try {
       await ctx.telegram.leaveChat(chatId)
     } catch {}
     console.info('Leave group', ctx.chat)
+    return
+  }
+  if (userId === 777000 && chatId) {
+    await ctx.telegram.deleteMessage(chatId, ctx.message?.message_id ?? 0)
+    await ctx.telegram.sendMessage(chatId, '请不要用频道身份发言')
+  }
+  if (userId === 777000) {
     return
   }
   const start = Date.now()
@@ -71,7 +79,7 @@ bot.on('callback_query', async (ctx, next) => {
 })
 
 twitterBot(bot)
-// groupBot(bot)
+groupBot(bot)
 infoBot(bot)
 exhentaiBot(bot)
 saucenaoBot(bot)
