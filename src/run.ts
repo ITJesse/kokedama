@@ -23,7 +23,6 @@ bot.use(async (ctx, next) => {
     console.info('Leave group', ctx.chat)
     return
   }
-  console.log(ctx.senderChat?.id)
   if (
     ctx.senderChat?.id !== process.env.TELEGRAM_CHANNEL_ID &&
     ctx.senderChat?.type === 'channel' &&
