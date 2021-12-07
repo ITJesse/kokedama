@@ -37,7 +37,7 @@ export const resizeImage = (
 
 export const getProfilePhoto = async (bot: Telegraf, userId: number) => {
   let imageUrl = 'https://dummyimage.com/1x1/000/fff'
-  const fileKey = `/profile/photo/${userId}_48.jpg`
+  const fileKey = `/profile/photo/${userId}_32.jpg`
   if (await fileKeyExists(fileKey)) {
     return signUrl(fileKey)
   }
