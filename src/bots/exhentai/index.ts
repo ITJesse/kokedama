@@ -12,7 +12,7 @@ import {
 import { DownloadTaskPayload, DownloadTaskStatus } from './types'
 import { exhentaiApi, fmtFolderName, galleryUrl, getGalleryMeta, getGalleryToken } from './utils'
 
-const galleryUrlRegex = /https:\/\/e(x|-)hentai\.org\/g\/(\d+)\/([a-f0-9]+)\//i
+const galleryUrlRegex = /https:\/\/e(x|-)hentai\.org\/g\/(\d+)\/([a-f0-9]+)/i
 const galleryPageUrlRegex =
   /https:\/\/e(x|-)hentai\.org\/s\/([a-f0-9]+)\/(\d+)-(\d+)/i
 
