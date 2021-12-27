@@ -2,14 +2,15 @@ import axios from 'axios'
 import { Markup, Telegraf } from 'telegraf'
 import WebSocket from 'ws'
 
-import { getName, getProfilePhoto, resizeImage, sendImage } from '@/utils'
-import { QQ_MSG_TO_TG_PREFIX, TG_MSG_TO_QQ_PREFIX } from '@/utils/consts'
-import * as redis from '@/utils/redis'
+import { resizeImage } from '@/utils'
 
-import { buildQQMessage } from './templates'
+import { QQMsgQueue } from './queue'
 import * as qq from './utils'
 
 export function qqBot(bot: Telegraf) {
+  const qqMsgQueue = new QQMsgQueue(bot)
+  qqMsgQueue.start()
+
   bot.on('text', async (ctx, next) => {
     const chatId = ctx.chat.id
     if (
@@ -19,21 +20,12 @@ export function qqBot(bot: Telegraf) {
       return next()
     }
 
-    const username = getName(ctx.message.from)
-    const profilePhoto = await getProfilePhoto(bot, ctx.message.from.id)
-
-    const message = buildQQMessage({
-      profilePhoto,
-      username,
-      message: ctx.message.text,
+    qqMsgQueue.addMessage({
+      type: 'text',
+      telegramMsgId: ctx.message.message_id,
+      fromUser: ctx.message.from,
+      data: ctx.message.text,
     })
-    await qq.sendMessage(message)
-    // await qq.sendMessage(message)
-    // await redis.setex(
-    //   `${QQ_MSG_TO_TG_PREFIX}${message_id}`,
-    //   24 * 60 * 60,
-    //   `${ctx.message.message_id}`,
-    // )
     next()
   })
 
@@ -45,8 +37,6 @@ export function qqBot(bot: Telegraf) {
     ) {
       return next()
     }
-    const username = getName(ctx.message.from)
-    const profilePhoto = await getProfilePhoto(bot, ctx.message.from.id)
     const stickerUrl = await bot.telegram.getFileLink(
       ctx.message.sticker.thumb?.file_id ?? ctx.message.sticker.file_id,
     )
@@ -54,12 +44,16 @@ export function qqBot(bot: Telegraf) {
       responseType: 'arraybuffer',
     })
     const buf = await resizeImage(data, { width: 128 })
-    const message = buildQQMessage({
-      profilePhoto,
-      username,
-      message: `[CQ:image,file=base64://${buf.toString('base64')}]`,
+
+    qqMsgQueue.addMessage({
+      type: 'image',
+      telegramMsgId: ctx.message.message_id,
+      fromUser: ctx.message.from,
+      data: {
+        image: `base64://${buf.toString('base64')}`,
+        msgId: ctx.message.message_id,
+      },
     })
-    await qq.sendMessage(message)
     next()
   })
 
@@ -71,21 +65,23 @@ export function qqBot(bot: Telegraf) {
     ) {
       return next()
     }
-    const profilePhoto = await getProfilePhoto(bot, ctx.message.from.id)
+    console.log(ctx.message)
     const imageUrl = await bot.telegram.getFileLink(
       ctx.message.photo.sort(
         (a, b) => b.width * b.height - a.width * a.height,
       )[0].file_id,
     )
-    const username = getName(ctx.message.from)
-    const message = buildQQMessage({
-      profilePhoto,
-      username,
-      message:
-        `[CQ:image,file=${imageUrl.href}]` +
-        (ctx.message.caption ? `\n${ctx.message.caption}` : ''),
+    qqMsgQueue.addMessage({
+      type: 'image',
+      telegramMsgId: ctx.message.message_id,
+      fromUser: ctx.message.from,
+      data: {
+        image: imageUrl.href,
+        caption: ctx.message.caption,
+        groupId: ctx.message.media_group_id,
+        msgId: ctx.message.message_id,
+      },
     })
-    await qq.sendMessage(message)
     // await redis.setex(
     //   `${QQ_MSG_TO_TG_PREFIX}${message_id}`,
     //   24 * 60 * 60,
@@ -102,16 +98,16 @@ export function qqBot(bot: Telegraf) {
     ) {
       return next()
     }
-    const profilePhoto = await getProfilePhoto(bot, ctx.message.from.id)
     const videoUrl = await bot.telegram.getFileLink(ctx.message.video.file_id)
-    const username = getName(ctx.message.from)
-    const message = buildQQMessage({
-      profilePhoto,
-      username,
-      message: ctx.message.caption ? `\n${ctx.message.caption}` : '',
+    qqMsgQueue.addMessage({
+      type: 'video',
+      telegramMsgId: ctx.message.message_id,
+      fromUser: ctx.message.from,
+      data: {
+        video: videoUrl.href,
+        caption: ctx.message.caption,
+      },
     })
-    await qq.sendMessage(message)
-    await qq.sendMessage(`[CQ:video,file=${videoUrl.href},c=3]`)
     next()
   })
 
@@ -123,18 +119,18 @@ export function qqBot(bot: Telegraf) {
     ) {
       return next()
     }
-    const profilePhoto = await getProfilePhoto(bot, ctx.message.from.id)
     const videoUrl = await bot.telegram.getFileLink(
       ctx.message.animation.file_id,
     )
-    const username = getName(ctx.message.from)
-    const message = buildQQMessage({
-      profilePhoto,
-      username,
-      message: ctx.message.caption ? `\n${ctx.message.caption}` : '',
+    qqMsgQueue.addMessage({
+      type: 'video',
+      telegramMsgId: ctx.message.message_id,
+      fromUser: ctx.message.from,
+      data: {
+        video: videoUrl.href,
+        caption: ctx.message.caption,
+      },
     })
-    await qq.sendMessage(message)
-    await qq.sendMessage(`[CQ:video,file=${videoUrl.href}]`)
     next()
   })
 
@@ -160,17 +156,31 @@ export function qqBot(bot: Telegraf) {
       }`
       const videos = res.message.filter((e: any) => e.type === 'video')
       const images = res.message.filter((e: any) => e.type === 'image')
-      const texts = res.message.filter((e: any) => e.type === 'text')
+      const texts = res.message.filter(
+        (e: any) => e.type === 'text' || e.type === 'face',
+      )
 
-      const content = texts.map((e: any) => e.data.text).join('')
+      // skip empty message
+      if (![videos, images, texts].some((e) => e.length > 0)) {
+        return
+      }
+
+      if (texts.some((e: any) => qq.hasBlacklistedWord(e.data.text ?? ''))) {
+        return
+      }
+
+      const content = texts
+        .map((e: any) => {
+          if (e.type === 'face') {
+            return '[表情]'
+          }
+          return e.data.text
+        })
+        .join('')
       const message =
         content.length > 0
           ? `<b>${username} 说：</b>\n${content}`
           : `<b>${username}</b>`
-
-      if (texts.some((e: any) => qq.hasBlacklistedWord(e.data.text))) {
-        return
-      }
 
       const gifs: any[] = []
       const trueImages: any[] = []
@@ -258,8 +268,11 @@ export function qqBot(bot: Telegraf) {
       // console.log(res)
     }
 
-    if (res.post_type === 'notice' && res.notice_type === 'group_upload') {
-      // console.log(res)
+    if (
+      res.post_type === 'notice' &&
+      res.notice_type === 'group_upload' &&
+      `${group_id}` === process.env.QQ_GROUP_ID
+    ) {
       if (
         !/\.mp4$/i.test(res.file?.name) ||
         res.file?.size > 50 * 1024 * 1024
