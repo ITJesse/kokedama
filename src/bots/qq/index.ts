@@ -2,15 +2,19 @@ import axios from 'axios'
 import { Markup, Telegraf } from 'telegraf'
 import WebSocket from 'ws'
 
-import { resizeImage } from '@/utils'
+import { delay, resizeImage } from '@/utils'
 import { TG_MSG_TO_QQ_PREFIX } from '@/utils/consts'
+import { signUrl } from '@/utils/oss'
 import * as redis from '@/utils/redis'
 
-import { TelegramMsgQueue } from './queue'
-import * as qq from './utils'
+import * as qq from './qq'
+import { QQMsgQueue, TelegramMsgQueue } from './queue'
+import * as utils from './utils'
 
 export function qqBot(bot: Telegraf) {
+  const qqMsgQueue = new QQMsgQueue(bot)
   const tgMsgQueue = new TelegramMsgQueue(bot)
+  qqMsgQueue.start()
   tgMsgQueue.start()
 
   bot.on('text', async (ctx, next) => {
@@ -22,8 +26,8 @@ export function qqBot(bot: Telegraf) {
       return next()
     }
 
-    tgMsgQueue.addMessage({
-      ...TelegramMsgQueue.extractTelegramInfo(ctx),
+    qqMsgQueue.addMessage({
+      ...QQMsgQueue.extractTelegramInfo(ctx),
       type: 'text',
       data: ctx.message.text,
     })
@@ -46,8 +50,8 @@ export function qqBot(bot: Telegraf) {
     })
     const buf = await resizeImage(data, { width: 128 })
 
-    tgMsgQueue.addMessage({
-      ...TelegramMsgQueue.extractTelegramInfo(ctx),
+    qqMsgQueue.addMessage({
+      ...QQMsgQueue.extractTelegramInfo(ctx),
       type: 'image',
       data: {
         image: `base64://${buf.toString('base64')}`,
@@ -70,8 +74,8 @@ export function qqBot(bot: Telegraf) {
         (a, b) => b.width * b.height - a.width * a.height,
       )[0].file_id,
     )
-    tgMsgQueue.addMessage({
-      ...TelegramMsgQueue.extractTelegramInfo(ctx),
+    qqMsgQueue.addMessage({
+      ...QQMsgQueue.extractTelegramInfo(ctx),
       type: 'image',
       data: {
         image: imageUrl.href,
@@ -97,8 +101,8 @@ export function qqBot(bot: Telegraf) {
       return next()
     }
     const videoUrl = await bot.telegram.getFileLink(ctx.message.video.file_id)
-    tgMsgQueue.addMessage({
-      ...TelegramMsgQueue.extractTelegramInfo(ctx),
+    qqMsgQueue.addMessage({
+      ...QQMsgQueue.extractTelegramInfo(ctx),
       type: 'video',
       data: {
         video: videoUrl.href,
@@ -119,8 +123,8 @@ export function qqBot(bot: Telegraf) {
     const videoUrl = await bot.telegram.getFileLink(
       ctx.message.animation.file_id,
     )
-    tgMsgQueue.addMessage({
-      ...TelegramMsgQueue.extractTelegramInfo(ctx),
+    qqMsgQueue.addMessage({
+      ...QQMsgQueue.extractTelegramInfo(ctx),
       type: 'video',
       data: {
         video: videoUrl.href,
@@ -147,36 +151,9 @@ export function qqBot(bot: Telegraf) {
         return
       }
 
-      const username = `${res.sender.title ? `[${res.sender.title}]` : ''} ${
-        res.sender.nickname
-      }`
       const videos = res.message.filter((e: any) => e.type === 'video')
       const images = res.message.filter((e: any) => e.type === 'image')
-      const texts = res.message.filter(
-        (e: any) => e.type === 'text' || e.type === 'face',
-      )
-
-      // skip empty message
-      if (![videos, images, texts].some((e) => e.length > 0)) {
-        return
-      }
-
-      if (texts.some((e: any) => qq.hasBlacklistedWord(e.data.text ?? ''))) {
-        return
-      }
-
-      const content = texts
-        .map((e: any) => {
-          if (e.type === 'face') {
-            return '[表情]'
-          }
-          return e.data.text
-        })
-        .join('')
-      const message =
-        content.length > 0
-          ? `<b>${username} 说：</b>\n${content}`
-          : `<b>${username}</b>`
+      const texts = res.message.filter((e: any) => e.type === 'text')
 
       const gifs: any[] = []
       const trueImages: any[] = []
@@ -190,99 +167,52 @@ export function qqBot(bot: Telegraf) {
         }
       }
 
-      for (const video of videos) {
-        const { message_id } = await bot.telegram.sendMessage(
-          process.env.TELEGRAM_GROUP_ID ?? 0,
-          '正在发送视频...',
-        )
-        const { data } = await axios.get(video.data.url, {
-          responseType: 'arraybuffer',
+      if (texts.some((e: any) => utils.hasBlacklistedWord(e.data.text ?? ''))) {
+        return
+      }
+
+      const text = texts
+        .map((e: any) => e.data.text)
+        .join('')
+        .trim()
+      if (text.length > 0) {
+        tgMsgQueue.addMessage({
+          ...(await TelegramMsgQueue.extractQQInfo(res)),
+          type: 'text',
+          data: text,
         })
-        const { width, height } = await qq.getVideoDimensions(Buffer.from(data))
-        const { message_id: finalMsgId } = await bot.telegram.sendVideo(
-          process.env.TELEGRAM_GROUP_ID ?? 0,
-          {
-            source: Buffer.from(data),
+      }
+
+      for (const video of videos) {
+        tgMsgQueue.addMessage({
+          ...(await TelegramMsgQueue.extractQQInfo(res)),
+          type: 'video',
+          data: {
+            video: video.data.url,
           },
-          { width, height },
-        )
-        await bot.telegram.deleteMessage(
-          process.env.TELEGRAM_GROUP_ID ?? 0,
-          message_id,
-        )
-        await redis.setex(
-          `${TG_MSG_TO_QQ_PREFIX}${message_id}`,
-          24 * 60 * 60,
-          `${finalMsgId}`,
-        )
+        })
       }
 
       for (const gif of gifs) {
-        const { message_id } = await bot.telegram.sendMessage(
-          process.env.TELEGRAM_GROUP_ID ?? 0,
-          '正在发送视频...',
-        )
-        const { message_id: finalMsgId } = await bot.telegram.sendAnimation(
-          process.env.TELEGRAM_GROUP_ID ?? 0,
-          gif.data.url,
-        )
-        await bot.telegram.deleteMessage(
-          process.env.TELEGRAM_GROUP_ID ?? 0,
-          message_id,
-        )
-        await redis.setex(
-          `${TG_MSG_TO_QQ_PREFIX}${message_id}`,
-          24 * 60 * 60,
-          `${finalMsgId}`,
-        )
+        tgMsgQueue.addMessage({
+          ...(await TelegramMsgQueue.extractQQInfo(res)),
+          type: 'animation',
+          data: {
+            video: gif.data.url,
+          },
+        })
       }
 
-      if (trueImages.length === 1) {
-        const { message_id } = await bot.telegram.sendPhoto(
-          process.env.TELEGRAM_GROUP_ID ?? 0,
-          trueImages[0].data.url,
-        )
-        await redis.setex(
-          `${TG_MSG_TO_QQ_PREFIX}${message_id}`,
-          24 * 60 * 60,
-          `${res.message_id}`,
-        )
+      for (const image of trueImages) {
+        tgMsgQueue.addMessage({
+          ...(await TelegramMsgQueue.extractQQInfo(res)),
+          type: 'image',
+          data: {
+            msgId: res.message_id,
+            image: image.data.url,
+          },
+        })
       }
-      if (trueImages.length > 1) {
-        for (let i = 0; i < trueImages.length; i += 10) {
-          const imagesToSend = trueImages.slice(i, i + 10)
-          const resp = await bot.telegram.sendMediaGroup(
-            process.env.TELEGRAM_GROUP_ID ?? 0,
-            imagesToSend.map((e: any) => ({
-              type: 'photo',
-              media: e.data.url,
-            })),
-          )
-          for (const { message_id } of resp) {
-            await redis.setex(
-              `${TG_MSG_TO_QQ_PREFIX}${message_id}`,
-              24 * 60 * 60,
-              `${res.message_id}`,
-            )
-          }
-        }
-      }
-
-      const { message_id } = await bot.telegram.sendMessage(
-        process.env.TELEGRAM_GROUP_ID ?? 0,
-        message,
-        {
-          parse_mode: 'HTML',
-          reply_markup: Markup.inlineKeyboard([
-            [Markup.button.callback(`来自QQ的消息`, 'nop')],
-          ]).reply_markup,
-        },
-      )
-      await redis.setex(
-        `${TG_MSG_TO_QQ_PREFIX}${message_id}`,
-        24 * 60 * 60,
-        `${res.message_id}`,
-      )
     }
 
     if (
@@ -290,44 +220,37 @@ export function qqBot(bot: Telegraf) {
       res.notice_type === 'group_upload' &&
       `${group_id}` === process.env.QQ_GROUP_ID
     ) {
-      if (
-        !/\.mp4$/i.test(res.file?.name) ||
-        res.file?.size > 50 * 1024 * 1024
-      ) {
+      if (res.file?.size > 50 * 1024 * 1024) {
         return
       }
-      const { nickname, title } = await qq.getGroupMemberInfo(res.user_id)
-      const username = `${title ? `[${title}]` : ''} ${nickname}`
-      const { message_id } = await bot.telegram.sendMessage(
-        process.env.TELEGRAM_GROUP_ID ?? 0,
-        '正在发送视频...',
-      )
-      const { data } = await axios.get(res.file.url, {
-        responseType: 'arraybuffer',
-      })
-      const { width, height } = await qq.getVideoDimensions(Buffer.from(data))
-      await bot.telegram.sendVideo(
-        process.env.TELEGRAM_GROUP_ID ?? 0,
-        {
-          source: Buffer.from(data),
-        },
-        { width, height },
-      )
-      await bot.telegram.deleteMessage(
-        process.env.TELEGRAM_GROUP_ID ?? 0,
-        message_id,
-      )
-      const message = `<b>${username}</b>`
-      await bot.telegram.sendMessage(
-        process.env.TELEGRAM_GROUP_ID ?? 0,
-        message,
-        {
-          parse_mode: 'HTML',
-          reply_markup: Markup.inlineKeyboard([
-            [Markup.button.callback(`来自QQ的消息`, 'nop')],
-          ]).reply_markup,
-        },
-      )
+      if (/\.mp4$/i.test(res.file?.name)) {
+        tgMsgQueue.addMessage({
+          ...(await TelegramMsgQueue.extractQQInfo(res)),
+          type: 'video',
+          data: {
+            video: res.file.url,
+          },
+        })
+      }
+      if (/\.(jpe?g|png|bmp)$/i.test(res.file?.name)) {
+        tgMsgQueue.addMessage({
+          ...(await TelegramMsgQueue.extractQQInfo(res)),
+          type: 'image',
+          data: {
+            msgId: 0,
+            image: res.file.url,
+          },
+        })
+      }
+      if (/\.gif$/i.test(res.file?.name)) {
+        tgMsgQueue.addMessage({
+          ...(await TelegramMsgQueue.extractQQInfo(res)),
+          type: 'animation',
+          data: {
+            video: res.file.url,
+          },
+        })
+      }
     }
   })
 }

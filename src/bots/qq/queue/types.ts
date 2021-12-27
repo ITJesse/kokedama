@@ -14,6 +14,7 @@ export type TelegramImageData = {
   image: string
   caption?: string
   msgId: number
+  flash?: boolean
 }
 
 type TelegramMsgData =
@@ -31,7 +32,7 @@ type TelegramMsgData =
   | {
       type: 'animation'
       data: {
-        gif: string
+        video: string
         caption?: string
       }
     }
@@ -46,4 +47,14 @@ type TelegramMsgData =
       }
     }
 
+export type QQProfile = {
+  title: string
+  nickname: string
+}
+export type QQMsgId = {
+  qqMsgId?: number
+  replyToMsgId?: number
+}
+
 export type TelegramMessage = TelegramMsgId & TelegramProfile & TelegramMsgData
+export type QQMessage = QQProfile & QQMsgId & TelegramMsgData

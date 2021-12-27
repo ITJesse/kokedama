@@ -1,15 +1,18 @@
-import { Context, Telegraf } from 'telegraf'
+import axios from 'axios'
+import { Context, Markup, Telegraf } from 'telegraf'
 import { Update, User } from 'telegraf/typings/core/types/typegram'
 
 import { delay, getName, getProfilePhoto } from '@/utils'
 import { QQ_MSG_TO_TG_PREFIX, TG_MSG_TO_QQ_PREFIX } from '@/utils/consts'
+import { signUrl } from '@/utils/oss'
 import * as redis from '@/utils/redis'
 
-import * as qq from '../utils'
+import * as qq from '../qq'
+import * as utils from '../utils'
 import { MsgQueue } from './base'
-import { TelegramImageData, TelegramMessage } from './types'
+import { QQMessage, QQMsgId, QQProfile, TelegramImageData, TelegramMessage } from './types'
 
-export class TelegramMsgQueue extends MsgQueue<TelegramMessage> {
+export class QQMsgQueue extends MsgQueue<TelegramMessage> {
   private imageGroup: { [key: string]: TelegramImageData[] } = {}
 
   public addMessage(msg: TelegramMessage) {
@@ -47,26 +50,18 @@ export class TelegramMsgQueue extends MsgQueue<TelegramMessage> {
     }
   }
 
-  protected async sendMessage() {
-    const msg = this.queue.shift()
-    if (!msg) return
-
+  protected async sendMessage(msg: TelegramMessage) {
     const profilePhoto = await getProfilePhoto(this.bot, msg.fromUser.id)
     const username = getName(msg.fromUser)
 
+    let qqMsgId: number | null = null
     if (msg.type === 'video') {
       await qq.sendMessage(`[CQ:video,file=${msg.data.video},c=3]`)
       const { message_id } = await qq.sendMessage(
         `[CQ:image,file=${profilePhoto}]${username} 上传了视频` +
           (msg.data.caption ? `\n${msg.data.caption}` : ''),
       )
-      if (msg.telegramMsgId) {
-        await redis.setex(
-          `${TG_MSG_TO_QQ_PREFIX}${msg.telegramMsgId}`,
-          24 * 60 * 60,
-          `${message_id}`,
-        )
-      }
+      qqMsgId = message_id
     } else {
       let content = `[CQ:image,file=${profilePhoto}]${username} 说：`
       if (msg.type === 'text') {
@@ -87,20 +82,184 @@ export class TelegramMsgQueue extends MsgQueue<TelegramMessage> {
             (image.caption ? `\n${image.caption}` : '')
         }
       }
-      const qqMsgId = msg.replyToMsgId
+      const replyToMsgId = msg.replyToMsgId
         ? await redis.get(`${TG_MSG_TO_QQ_PREFIX}${msg.replyToMsgId}`)
         : undefined
-      if (qqMsgId) {
-        content = `[CQ:reply,id=${qqMsgId}] ${content}`
+      if (replyToMsgId) {
+        content = `[CQ:reply,id=${replyToMsgId}] ${content}`
       }
       const { message_id } = await qq.sendMessage(content)
-      if (msg.telegramMsgId) {
-        await redis.setex(
-          `${TG_MSG_TO_QQ_PREFIX}${msg.telegramMsgId}`,
-          24 * 60 * 60,
-          `${message_id}`,
-        )
-      }
+      qqMsgId = message_id
+    }
+
+    if (msg.telegramMsgId && qqMsgId) {
+      await redis.setex(
+        `${TG_MSG_TO_QQ_PREFIX}${msg.telegramMsgId}`,
+        24 * 60 * 60,
+        `${qqMsgId}`,
+      )
+      await redis.setex(
+        `${QQ_MSG_TO_TG_PREFIX}${qqMsgId}`,
+        24 * 60 * 60,
+        `${msg.telegramMsgId}`,
+      )
+    }
+  }
+}
+
+export class TelegramMsgQueue extends MsgQueue<QQMessage> {
+  public addMessage(msg: QQMessage) {
+    this.queue.push(msg)
+  }
+
+  static extractQQInfo = async (msg: any): Promise<QQProfile & QQMsgId> => {
+    if (msg.message_type === 'group' && msg.post_type === 'message') {
+      const reply = msg.message.find((e: any) => e.type === 'reply')
+      return Promise.resolve({
+        qqMsgId: msg.message_id,
+        replyToMsgId: reply?.data.id,
+        title: msg.sender.title,
+        nickname: msg.sender.nickname,
+      })
+    }
+    if (msg.post_type === 'notice' && msg.notice_type === 'group_upload') {
+      const { nickname, title } = await qq.getGroupMemberInfo(msg.user_id)
+      return Promise.resolve({
+        qqMsgId: msg.message_id,
+        title,
+        nickname,
+      })
+    }
+    throw new Error('message type not match')
+  }
+
+  protected async sendMessage(msg: QQMessage) {
+    const { title, nickname } = msg
+    const username = `${title ? `[${title}]` : ''} ${nickname}`
+
+    const replyMsgIdStr = msg.replyToMsgId
+      ? await redis.get(`${QQ_MSG_TO_TG_PREFIX}${msg.replyToMsgId}`)
+      : undefined
+    const replyMsgId = replyMsgIdStr ? parseInt(replyMsgIdStr) : undefined
+
+    let telegramMsgId: number | null = null
+    if (msg.type === 'video') {
+      const { message_id } = await this.bot.telegram.sendVideo(
+        process.env.TELEGRAM_GROUP_ID ?? 0,
+        signUrl('/sample/upload.mp4'),
+        {
+          caption: `<b>${username}</b> 正在发送视频...`,
+          parse_mode: 'HTML',
+          reply_markup: Markup.inlineKeyboard([
+            [Markup.button.callback(`来自QQ的消息`, 'nop')],
+          ]).reply_markup,
+          reply_to_message_id: replyMsgId,
+        },
+      )
+      telegramMsgId = message_id
+      const { data } = await axios.get(msg.data.video, {
+        responseType: 'arraybuffer',
+      })
+      const { width, height } = await utils.getVideoDimensions(
+        Buffer.from(data),
+      )
+      await this.bot.telegram.editMessageMedia(
+        process.env.TELEGRAM_GROUP_ID ?? 0,
+        message_id,
+        undefined,
+        {
+          type: 'video',
+          media: {
+            source: Buffer.from(data),
+          },
+          width,
+          height,
+          caption: `<b>${username}</b>`,
+          parse_mode: 'HTML',
+        },
+        {
+          reply_markup: Markup.inlineKeyboard([
+            [Markup.button.callback(`来自QQ的消息`, 'nop')],
+          ]).reply_markup,
+        },
+      )
+    }
+
+    if (msg.type === 'animation') {
+      const { message_id } = await this.bot.telegram.sendAnimation(
+        process.env.TELEGRAM_GROUP_ID ?? 0,
+        signUrl('/sample/upload.gif'),
+        {
+          caption: `<b>${username}</b> 正在发送表情...`,
+          parse_mode: 'HTML',
+          reply_markup: Markup.inlineKeyboard([
+            [Markup.button.callback(`来自QQ的消息`, 'nop')],
+          ]).reply_markup,
+          reply_to_message_id: replyMsgId,
+        },
+      )
+      telegramMsgId = message_id
+      await this.bot.telegram.editMessageMedia(
+        process.env.TELEGRAM_GROUP_ID ?? 0,
+        message_id,
+        undefined,
+        {
+          type: 'video',
+          media: msg.data.video,
+          caption: `<b>${username}</b>`,
+          parse_mode: 'HTML',
+        },
+        {
+          reply_markup: Markup.inlineKeyboard([
+            [Markup.button.callback(`来自QQ的消息`, 'nop')],
+          ]).reply_markup,
+        },
+      )
+    }
+
+    if (msg.type === 'text') {
+      const message = `<b>${username} 说：</b>\n${msg.data}`
+      const { message_id } = await this.bot.telegram.sendMessage(
+        process.env.TELEGRAM_GROUP_ID ?? 0,
+        message,
+        {
+          parse_mode: 'HTML',
+          reply_markup: Markup.inlineKeyboard([
+            [Markup.button.callback(`来自QQ的消息`, 'nop')],
+          ]).reply_markup,
+          reply_to_message_id: replyMsgId,
+        },
+      )
+      telegramMsgId = message_id
+    }
+
+    if (msg.type === 'image') {
+      const { message_id } = await this.bot.telegram.sendPhoto(
+        process.env.TELEGRAM_GROUP_ID ?? 0,
+        msg.data.image,
+        {
+          caption: `<b>${username}</b>`,
+          parse_mode: 'HTML',
+          reply_markup: Markup.inlineKeyboard([
+            [Markup.button.callback(`来自QQ的消息`, 'nop')],
+          ]).reply_markup,
+          reply_to_message_id: replyMsgId,
+        },
+      )
+      telegramMsgId = message_id
+    }
+
+    if (telegramMsgId && msg.qqMsgId) {
+      await redis.setex(
+        `${TG_MSG_TO_QQ_PREFIX}${telegramMsgId}`,
+        24 * 60 * 60,
+        `${msg.qqMsgId}`,
+      )
+      await redis.setex(
+        `${QQ_MSG_TO_TG_PREFIX}${msg.qqMsgId}`,
+        24 * 60 * 60,
+        `${telegramMsgId}`,
+      )
     }
   }
 }

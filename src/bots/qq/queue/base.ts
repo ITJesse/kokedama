@@ -14,16 +14,19 @@ export class MsgQueue<Message> {
     throw new Error('not implemented')
   }
 
-  protected async sendMessage() {
+  protected async sendMessage(msg: Message) {
     throw new Error('not implemented')
   }
 
   public start() {
     const send = async () => {
-      try {
-        await this.sendMessage()
-      } catch (err) {
-        console.error(err)
+      const msg = this.queue.shift()
+      if (msg) {
+        try {
+          await this.sendMessage(msg)
+        } catch (err) {
+          console.error(err)
+        }
       }
       await delay(100)
       send()
