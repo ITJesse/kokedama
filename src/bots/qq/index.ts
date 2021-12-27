@@ -6,6 +6,7 @@ import { resizeImage } from '@/utils'
 import { TG_MSG_TO_QQ_PREFIX } from '@/utils/consts'
 import redis from '@/utils/redis'
 
+import { facemap } from './face'
 import * as qq from './qq'
 import { QQMsgQueue, TelegramMsgQueue } from './queue'
 import * as utils from './utils'
@@ -183,7 +184,9 @@ export function qqBot(bot: Telegraf) {
 
       const videos = res.message.filter((e: any) => e.type === 'video')
       const images = res.message.filter((e: any) => e.type === 'image')
-      const texts = res.message.filter((e: any) => e.type === 'text')
+      const texts = res.message.filter(
+        (e: any) => e.type === 'text' || e.type === 'face',
+      )
 
       const gifs: any[] = []
       const trueImages: any[] = []
@@ -202,7 +205,14 @@ export function qqBot(bot: Telegraf) {
       }
 
       const text = texts
-        .map((e: any) => e.data.text)
+        .map((e: any) => {
+          if (e.type === 'text') {
+            return e.data.text
+          } else if (e.type === 'face') {
+            const faceText = facemap[e.data.id] ?? '表情'
+            return `[${faceText}]`
+          }
+        })
         .join('')
         .trim()
       if (text.length > 0) {
