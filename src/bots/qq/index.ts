@@ -17,7 +17,6 @@ export function qqBot(bot: Telegraf) {
   tgMsgQueue.start()
 
   bot.command('rm', async (ctx) => {
-    console.log(ctx.message)
     const msgId = ctx.message.message_id
     const deleteMsg = ctx.message.reply_to_message
 

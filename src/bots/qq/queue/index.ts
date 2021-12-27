@@ -113,7 +113,6 @@ export class TelegramMsgQueue extends MsgQueue<QQMessage> {
   }
 
   static extractQQInfo = async (msg: any): Promise<QQProfile & QQMsgId> => {
-    console.log(msg)
     if (msg.message_type === 'group' && msg.post_type === 'message') {
       const reply = msg.message.find((e: any) => e.type === 'reply')
       return Promise.resolve({
