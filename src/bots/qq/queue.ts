@@ -1,5 +1,5 @@
-import { Telegraf } from 'telegraf'
-import { User } from 'telegraf/typings/core/types/typegram'
+import { Context, Telegraf } from 'telegraf'
+import { Update, User } from 'telegraf/typings/core/types/typegram'
 
 import { delay, getName, getProfilePhoto } from '@/utils'
 import { QQ_MSG_TO_TG_PREFIX, TG_MSG_TO_QQ_PREFIX } from '@/utils/consts'
@@ -13,6 +13,7 @@ type Profile = {
 
 type TelegramMsgId = {
   telegramMsgId?: number
+  replyToMsgId?: number
 }
 
 type ImageData = {
@@ -91,14 +92,17 @@ export class QQMsgQueue {
     }
   }
 
-  static canSendSingleMessage = (sender: User, msg: Message | undefined) => {
-    if (!msg || msg.fromUser.id !== sender.id) {
-      return false
+  static extractTelegramInfo = (msg: Context<Update>) => {
+    const { message } = msg
+    if (!message) throw new Error('message type not match')
+
+    return {
+      telegramMsgId: message.message_id,
+      replyToMsgId: (message as any).reply_to_message.message_id as
+        | number
+        | undefined,
+      fromUser: message.from,
     }
-    if (!['image', 'image_group', 'text'].includes(msg.type)) {
-      return false
-    }
-    return true
   }
 
   private async sendMessage() {
@@ -109,10 +113,8 @@ export class QQMsgQueue {
     const username = getName(msg.fromUser)
 
     if (msg.type === 'video') {
-      const { message_id: msgId1 } = await qq.sendMessage(
-        `[CQ:video,file=${msg.data.video},c=3]`,
-      )
-      const { message_id: msgId2 } = await qq.sendMessage(
+      await qq.sendMessage(`[CQ:video,file=${msg.data.video},c=3]`)
+      const { message_id } = await qq.sendMessage(
         `[CQ:image,file=${profilePhoto}]${username} 上传了视频` +
           (msg.data.caption ? `\n${msg.data.caption}` : ''),
       )
@@ -120,7 +122,7 @@ export class QQMsgQueue {
         await redis.setex(
           `${TG_MSG_TO_QQ_PREFIX}${msg.telegramMsgId}`,
           24 * 60 * 60,
-          `${msgId1},${msgId2}`,
+          `${message_id}`,
         )
       }
     } else {
@@ -142,6 +144,12 @@ export class QQMsgQueue {
             `\n[CQ:image,file=${image.image}]` +
             (image.caption ? `\n${image.caption}` : '')
         }
+      }
+      const qqMsgId = msg.replyToMsgId
+        ? await redis.get(`${TG_MSG_TO_QQ_PREFIX}${msg.replyToMsgId}`)
+        : undefined
+      if (qqMsgId) {
+        content = `[CQ:reply,id=${qqMsgId}] ${content}`
       }
       const { message_id } = await qq.sendMessage(content)
       if (msg.telegramMsgId) {

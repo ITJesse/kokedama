@@ -3,6 +3,8 @@ import { Markup, Telegraf } from 'telegraf'
 import WebSocket from 'ws'
 
 import { resizeImage } from '@/utils'
+import { TG_MSG_TO_QQ_PREFIX } from '@/utils/consts'
+import * as redis from '@/utils/redis'
 
 import { QQMsgQueue } from './queue'
 import * as qq from './utils'
@@ -21,9 +23,8 @@ export function qqBot(bot: Telegraf) {
     }
 
     qqMsgQueue.addMessage({
+      ...QQMsgQueue.extractTelegramInfo(ctx),
       type: 'text',
-      telegramMsgId: ctx.message.message_id,
-      fromUser: ctx.message.from,
       data: ctx.message.text,
     })
     next()
@@ -46,9 +47,8 @@ export function qqBot(bot: Telegraf) {
     const buf = await resizeImage(data, { width: 128 })
 
     qqMsgQueue.addMessage({
+      ...QQMsgQueue.extractTelegramInfo(ctx),
       type: 'image',
-      telegramMsgId: ctx.message.message_id,
-      fromUser: ctx.message.from,
       data: {
         image: `base64://${buf.toString('base64')}`,
         msgId: ctx.message.message_id,
@@ -72,9 +72,8 @@ export function qqBot(bot: Telegraf) {
       )[0].file_id,
     )
     qqMsgQueue.addMessage({
+      ...QQMsgQueue.extractTelegramInfo(ctx),
       type: 'image',
-      telegramMsgId: ctx.message.message_id,
-      fromUser: ctx.message.from,
       data: {
         image: imageUrl.href,
         caption: ctx.message.caption,
@@ -100,9 +99,8 @@ export function qqBot(bot: Telegraf) {
     }
     const videoUrl = await bot.telegram.getFileLink(ctx.message.video.file_id)
     qqMsgQueue.addMessage({
+      ...QQMsgQueue.extractTelegramInfo(ctx),
       type: 'video',
-      telegramMsgId: ctx.message.message_id,
-      fromUser: ctx.message.from,
       data: {
         video: videoUrl.href,
         caption: ctx.message.caption,
@@ -123,9 +121,8 @@ export function qqBot(bot: Telegraf) {
       ctx.message.animation.file_id,
     )
     qqMsgQueue.addMessage({
+      ...QQMsgQueue.extractTelegramInfo(ctx),
       type: 'video',
-      telegramMsgId: ctx.message.message_id,
-      fromUser: ctx.message.from,
       data: {
         video: videoUrl.href,
         caption: ctx.message.caption,
@@ -203,7 +200,7 @@ export function qqBot(bot: Telegraf) {
           responseType: 'arraybuffer',
         })
         const { width, height } = await qq.getVideoDimensions(Buffer.from(data))
-        await bot.telegram.sendVideo(
+        const { message_id: finalMsgId } = await bot.telegram.sendVideo(
           process.env.TELEGRAM_GROUP_ID ?? 0,
           {
             source: Buffer.from(data),
@@ -214,6 +211,11 @@ export function qqBot(bot: Telegraf) {
           process.env.TELEGRAM_GROUP_ID ?? 0,
           message_id,
         )
+        await redis.setex(
+          `${TG_MSG_TO_QQ_PREFIX}${message_id}`,
+          24 * 60 * 60,
+          `${finalMsgId}`,
+        )
       }
 
       for (const gif of gifs) {
@@ -221,7 +223,7 @@ export function qqBot(bot: Telegraf) {
           process.env.TELEGRAM_GROUP_ID ?? 0,
           '正在发送视频...',
         )
-        await bot.telegram.sendAnimation(
+        const { message_id: finalMsgId } = await bot.telegram.sendAnimation(
           process.env.TELEGRAM_GROUP_ID ?? 0,
           gif.data.url,
         )
@@ -229,24 +231,41 @@ export function qqBot(bot: Telegraf) {
           process.env.TELEGRAM_GROUP_ID ?? 0,
           message_id,
         )
+        await redis.setex(
+          `${TG_MSG_TO_QQ_PREFIX}${message_id}`,
+          24 * 60 * 60,
+          `${finalMsgId}`,
+        )
       }
 
       if (trueImages.length === 1) {
-        await bot.telegram.sendPhoto(
+        const { message_id } = await bot.telegram.sendPhoto(
           process.env.TELEGRAM_GROUP_ID ?? 0,
           trueImages[0].data.url,
+        )
+        await redis.setex(
+          `${TG_MSG_TO_QQ_PREFIX}${message_id}`,
+          24 * 60 * 60,
+          `${res.message_id}`,
         )
       }
       if (trueImages.length > 1) {
         for (let i = 0; i < trueImages.length; i += 10) {
           const imagesToSend = trueImages.slice(i, i + 10)
-          await bot.telegram.sendMediaGroup(
+          const resp = await bot.telegram.sendMediaGroup(
             process.env.TELEGRAM_GROUP_ID ?? 0,
             imagesToSend.map((e: any) => ({
               type: 'photo',
               media: e.data.url,
             })),
           )
+          for (const { message_id } of resp) {
+            await redis.setex(
+              `${TG_MSG_TO_QQ_PREFIX}${message_id}`,
+              24 * 60 * 60,
+              `${res.message_id}`,
+            )
+          }
         }
       }
 
@@ -260,12 +279,11 @@ export function qqBot(bot: Telegraf) {
           ]).reply_markup,
         },
       )
-      // await redis.setex(
-      //   `${TG_MSG_TO_QQ_PREFIX}${message_id}`,
-      //   24 * 60 * 60,
-      //   `${res.message_id}`,
-      // )
-      // console.log(res)
+      await redis.setex(
+        `${TG_MSG_TO_QQ_PREFIX}${message_id}`,
+        24 * 60 * 60,
+        `${res.message_id}`,
+      )
     }
 
     if (
