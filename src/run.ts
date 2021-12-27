@@ -90,7 +90,7 @@ twitterBot(bot)
 groupBot(bot)
 infoBot(bot)
 exhentaiBot(bot)
-// saucenaoBot(bot)
+saucenaoBot(bot)
 qqBot(bot)
 
 scheduler(bot)
