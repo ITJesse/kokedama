@@ -5,6 +5,7 @@ import { delay } from '@/utils'
 export class MsgQueue<Message> {
   protected bot: Telegraf
   protected queue: Message[] = []
+  protected wait = 100
 
   constructor(bot: Telegraf) {
     this.bot = bot
@@ -28,7 +29,7 @@ export class MsgQueue<Message> {
           console.error(err)
         }
       }
-      await delay(100)
+      await delay(this.wait)
       send()
     }
     send()

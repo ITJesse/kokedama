@@ -14,6 +14,7 @@ import { QQMessage, QQMsgId, QQProfile, TelegramImageData, TelegramMessage } fro
 
 export class QQMsgQueue extends MsgQueue<TelegramMessage> {
   private imageGroup: { [key: string]: TelegramImageData[] } = {}
+  protected wait = 1000
 
   public addMessage(msg: TelegramMessage) {
     if (msg.type === 'image' && msg.data.groupId) {
@@ -76,11 +77,15 @@ export class QQMsgQueue extends MsgQueue<TelegramMessage> {
         const images = (this.imageGroup[msg.data.groupId] ?? []).sort(
           (a, b) => a.msgId - b.msgId,
         )
+        if (images.length === 0) {
+          return
+        }
         for (const image of images) {
           content +=
             `\n[CQ:image,file=${image.image}]` +
             (image.caption ? `\n${image.caption}` : '')
         }
+        delete this.imageGroup[msg.data.groupId]
       }
       const replyToMsgId = msg.replyToMsgId
         ? await redis.get(`${TG_MSG_TO_QQ_PREFIX}${msg.replyToMsgId}`)
