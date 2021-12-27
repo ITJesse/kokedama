@@ -1,11 +1,15 @@
 import axios from 'axios'
+import { commandOptions } from 'redis'
 import { Context, Markup, Telegraf } from 'telegraf'
 import { InputFile, Update, User } from 'telegraf/typings/core/types/typegram'
+import { threadId } from 'worker_threads'
 
 import { delay, getName, getProfilePhoto } from '@/utils'
-import { QQ_MSG_TO_TG_PREFIX, TG_MSG_TO_QQ_PREFIX } from '@/utils/consts'
+import {
+    MEDIA_GROUP_PREFIX, QQ_MSG_TO_TG_PREFIX, QQMSG_QUEUE, TG_MSG_TO_QQ_PREFIX, TGMSG_QUEUE
+} from '@/utils/consts'
 import { signUrl } from '@/utils/oss'
-import * as redis from '@/utils/redis'
+import redis from '@/utils/redis'
 
 import * as qq from '../qq'
 import * as utils from '../utils'
@@ -13,28 +17,25 @@ import { MsgQueue } from './base'
 import { QQMessage, QQMsgId, QQProfile, TelegramImageData, TelegramMessage } from './types'
 
 export class QQMsgQueue extends MsgQueue<TelegramMessage> {
-  private imageGroup: { [key: string]: TelegramImageData[] } = {}
-  protected wait = 1000
+  protected queue = QQMSG_QUEUE
 
-  public addMessage(msg: TelegramMessage) {
+  public async addMessage(msg: TelegramMessage) {
     if (msg.type === 'image' && msg.data.groupId) {
       const { groupId } = msg.data
-      if (!this.imageGroup[groupId]) {
-        this.imageGroup[groupId] = []
-      }
-      this.imageGroup[groupId].push(msg.data)
-      const exists = this.queue.find(
-        (e) => e.type === 'image_group' && e.data.groupId === groupId,
+      await this.client.RPUSH(
+        `${MEDIA_GROUP_PREFIX}${groupId}`,
+        JSON.stringify(msg.data),
       )
-      if (!exists) {
-        this.queue.push({
+      await this.client.RPUSH(
+        this.queue,
+        JSON.stringify({
           type: 'image_group',
           data: { groupId: groupId },
           fromUser: msg.fromUser,
-        })
-      }
+        }),
+      )
     } else {
-      this.queue.push(msg)
+      await this.client.RPUSH(this.queue, JSON.stringify(msg))
     }
   }
 
@@ -55,6 +56,10 @@ export class QQMsgQueue extends MsgQueue<TelegramMessage> {
     const profilePhoto = await getProfilePhoto(this.bot, msg.fromUser.id)
     const username = getName(msg.fromUser)
 
+    const replyToMsgId = msg.replyToMsgId
+      ? await this.client.get(`${TG_MSG_TO_QQ_PREFIX}${msg.replyToMsgId}`)
+      : undefined
+
     let qqMsgId: number | null = null
     if (msg.type === 'video') {
       await qq.sendMessage(`[CQ:video,file=${msg.data.video},c=3]`)
@@ -63,6 +68,47 @@ export class QQMsgQueue extends MsgQueue<TelegramMessage> {
           (msg.data.caption ? `\n${msg.data.caption}` : ''),
       )
       qqMsgId = message_id
+    } else if (msg.type === 'image_group') {
+      let content = `[CQ:image,file=${profilePhoto}]${username} 说：`
+      let images: TelegramImageData[] = []
+      const getImages = async () => {
+        const res = await this.client.BLPOP(
+          commandOptions({ isolated: true }),
+          `${MEDIA_GROUP_PREFIX}${msg.data.groupId}`,
+          3,
+        )
+        await this.client.DEL(`${MEDIA_GROUP_PREFIX}${msg.data.groupId}`)
+        if (res?.element) {
+          const r: TelegramImageData = JSON.parse(res.element)
+          images.push(r)
+          await getImages()
+        } else {
+          return
+        }
+      }
+      await getImages()
+      if (images.length === 0) {
+        return
+      }
+      images = images.sort((a, b) => a.msgId - b.msgId)
+      const tgIds: number[] = []
+      for (const image of images) {
+        content += `\n[CQ:image,file=${image.image}]`
+        tgIds.push(image.msgId)
+      }
+      const { message_id } = await qq.sendMessage(content)
+      for (const tgId of tgIds) {
+        await this.client.SETEX(
+          `${TG_MSG_TO_QQ_PREFIX}${tgId}`,
+          24 * 60 * 60,
+          `${message_id}`,
+        )
+      }
+      await this.client.SETEX(
+        `${QQ_MSG_TO_TG_PREFIX}${message_id}`,
+        24 * 60 * 60,
+        `${tgIds.join(',')}`,
+      )
     } else {
       let content = `[CQ:image,file=${profilePhoto}]${username} 说：`
       if (msg.type === 'text') {
@@ -73,23 +119,6 @@ export class QQMsgQueue extends MsgQueue<TelegramMessage> {
           `\n[CQ:image,file=${msg.data.image}]` +
           (msg.data.caption ? `\n${msg.data.caption}` : '')
       }
-      if (msg.type === 'image_group') {
-        const images = (this.imageGroup[msg.data.groupId] ?? []).sort(
-          (a, b) => a.msgId - b.msgId,
-        )
-        if (images.length === 0) {
-          return
-        }
-        for (const image of images) {
-          content +=
-            `\n[CQ:image,file=${image.image}]` +
-            (image.caption ? `\n${image.caption}` : '')
-        }
-        delete this.imageGroup[msg.data.groupId]
-      }
-      const replyToMsgId = msg.replyToMsgId
-        ? await redis.get(`${TG_MSG_TO_QQ_PREFIX}${msg.replyToMsgId}`)
-        : undefined
       if (replyToMsgId) {
         content = `[CQ:reply,id=${replyToMsgId}] ${content}`
       }
@@ -98,12 +127,12 @@ export class QQMsgQueue extends MsgQueue<TelegramMessage> {
     }
 
     if (msg.telegramMsgId && qqMsgId) {
-      await redis.setex(
+      await this.client.SETEX(
         `${TG_MSG_TO_QQ_PREFIX}${msg.telegramMsgId}`,
         24 * 60 * 60,
         `${qqMsgId}`,
       )
-      await redis.setex(
+      await this.client.SETEX(
         `${QQ_MSG_TO_TG_PREFIX}${qqMsgId}`,
         24 * 60 * 60,
         `${msg.telegramMsgId}`,
@@ -113,8 +142,10 @@ export class QQMsgQueue extends MsgQueue<TelegramMessage> {
 }
 
 export class TelegramMsgQueue extends MsgQueue<QQMessage> {
-  public addMessage(msg: QQMessage) {
-    this.queue.push(msg)
+  protected queue = TGMSG_QUEUE
+
+  public async addMessage(msg: QQMessage) {
+    await this.client.RPUSH(this.queue, JSON.stringify(msg))
   }
 
   static extractQQInfo = async (msg: any): Promise<QQProfile & QQMsgId> => {
@@ -143,9 +174,11 @@ export class TelegramMsgQueue extends MsgQueue<QQMessage> {
     const username = `${title ? `[${title}]` : ''} ${nickname}`
 
     const replyMsgIdStr = msg.replyToMsgId
-      ? await redis.get(`${QQ_MSG_TO_TG_PREFIX}${msg.replyToMsgId}`)
+      ? await this.client.get(`${QQ_MSG_TO_TG_PREFIX}${msg.replyToMsgId}`)
       : undefined
-    const replyMsgId = replyMsgIdStr ? parseInt(replyMsgIdStr) : undefined
+    const replyMsgId = replyMsgIdStr
+      ? parseInt(replyMsgIdStr.split(',')[0])
+      : undefined
 
     let telegramMsgId: number | null = null
     if (msg.type === 'video') {
@@ -254,22 +287,26 @@ export class TelegramMsgQueue extends MsgQueue<QQMessage> {
     }
 
     if (msg.type === 'recall') {
-      const msgId = await redis.get(`${QQ_MSG_TO_TG_PREFIX}${msg.data.msgId}`)
-      if (msgId) {
-        await this.bot.telegram.deleteMessage(
-          process.env.TELEGRAM_GROUP_ID ?? 0,
-          parseInt(msgId),
-        )
+      const msgIds = await this.client.get(
+        `${QQ_MSG_TO_TG_PREFIX}${msg.data.msgId}`,
+      )
+      if (msgIds) {
+        for (const msgId of msgIds.split(',')) {
+          await this.bot.telegram.deleteMessage(
+            process.env.TELEGRAM_GROUP_ID ?? 0,
+            parseInt(msgId),
+          )
+        }
       }
     }
 
     if (telegramMsgId && msg.qqMsgId) {
-      await redis.setex(
+      await this.client.SETEX(
         `${TG_MSG_TO_QQ_PREFIX}${telegramMsgId}`,
         24 * 60 * 60,
         `${msg.qqMsgId}`,
       )
-      await redis.setex(
+      await this.client.SETEX(
         `${QQ_MSG_TO_TG_PREFIX}${msg.qqMsgId}`,
         24 * 60 * 60,
         `${telegramMsgId}`,

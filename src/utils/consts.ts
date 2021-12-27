@@ -6,3 +6,8 @@ export const EXHENTAI_API_TASK_PREFIX = 'EXHENTAI_TASK_'
 
 export const QQ_MSG_TO_TG_PREFIX = 'QQ_MSG_'
 export const TG_MSG_TO_QQ_PREFIX = 'TG_MSG_'
+
+export const QQMSG_QUEUE = 'QQ_MSGQUEUE'
+export const TGMSG_QUEUE = 'TG_MSGQUEUE'
+
+export const MEDIA_GROUP_PREFIX = 'MEDIA_GROUP_'

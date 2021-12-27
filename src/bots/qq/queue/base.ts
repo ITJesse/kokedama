@@ -1,14 +1,17 @@
+import { commandOptions } from 'redis'
 import { Telegraf } from 'telegraf'
 
-import { delay } from '@/utils'
+import redis from '@/utils/redis'
 
 export class MsgQueue<Message> {
   protected bot: Telegraf
-  protected queue: Message[] = []
-  protected wait = 100
+  protected queue = 'TEST_QUEUE'
+  protected client
 
   constructor(bot: Telegraf) {
     this.bot = bot
+    this.client = redis.duplicate()
+    this.client.connect()
   }
 
   public addMessage(msg: Message) {
@@ -21,15 +24,19 @@ export class MsgQueue<Message> {
 
   public start() {
     const send = async () => {
-      const msg = this.queue.shift()
-      if (msg) {
-        try {
+      try {
+        const res = await this.client.BLPOP(
+          commandOptions({ isolated: true }),
+          this.queue,
+          0,
+        )
+        if (res?.element) {
+          const msg = JSON.parse(res?.element)
           await this.sendMessage(msg)
-        } catch (err) {
-          console.error(err)
         }
+      } catch (err) {
+        console.error(err)
       }
-      await delay(this.wait)
       send()
     }
     send()

@@ -4,7 +4,7 @@ import WebSocket from 'ws'
 
 import { resizeImage } from '@/utils'
 import { TG_MSG_TO_QQ_PREFIX } from '@/utils/consts'
-import * as redis from '@/utils/redis'
+import redis from '@/utils/redis'
 
 import * as qq from './qq'
 import { QQMsgQueue, TelegramMsgQueue } from './queue'
@@ -22,17 +22,23 @@ export function qqBot(bot: Telegraf) {
 
     if (!deleteMsg) {
       await ctx.deleteMessage(msgId)
-      return ctx.reply('请回复一条消息', { reply_to_message_id: msgId })
+      return ctx.reply('请回复一条消息', {
+        reply_to_message_id: msgId,
+        allow_sending_without_reply: true,
+      })
     }
 
     const msgSender = deleteMsg.from?.id
     const commandSender = ctx.message.from.id
     if (msgSender !== commandSender) {
       await ctx.deleteMessage(msgId)
-      return ctx.reply('你只能撤回自己的消息', { reply_to_message_id: msgId })
+      return ctx.reply('你只能撤回自己的消息', {
+        reply_to_message_id: msgId,
+        allow_sending_without_reply: true,
+      })
     }
 
-    const qqMsgId = await redis.get(
+    const qqMsgId = await redis.GET(
       `${TG_MSG_TO_QQ_PREFIX}${deleteMsg.message_id}`,
     )
     if (qqMsgId) {
@@ -50,7 +56,7 @@ export function qqBot(bot: Telegraf) {
       return next()
     }
 
-    qqMsgQueue.addMessage({
+    await qqMsgQueue.addMessage({
       ...QQMsgQueue.extractTelegramInfo(ctx),
       type: 'text',
       data: ctx.message.text,
@@ -74,7 +80,7 @@ export function qqBot(bot: Telegraf) {
     })
     const buf = await resizeImage(data, { width: 128 })
 
-    qqMsgQueue.addMessage({
+    await qqMsgQueue.addMessage({
       ...QQMsgQueue.extractTelegramInfo(ctx),
       type: 'image',
       data: {
@@ -98,7 +104,7 @@ export function qqBot(bot: Telegraf) {
         (a, b) => b.width * b.height - a.width * a.height,
       )[0].file_id,
     )
-    qqMsgQueue.addMessage({
+    await qqMsgQueue.addMessage({
       ...QQMsgQueue.extractTelegramInfo(ctx),
       type: 'image',
       data: {
@@ -125,7 +131,7 @@ export function qqBot(bot: Telegraf) {
       return next()
     }
     const videoUrl = await bot.telegram.getFileLink(ctx.message.video.file_id)
-    qqMsgQueue.addMessage({
+    await qqMsgQueue.addMessage({
       ...QQMsgQueue.extractTelegramInfo(ctx),
       type: 'video',
       data: {
@@ -147,7 +153,7 @@ export function qqBot(bot: Telegraf) {
     const videoUrl = await bot.telegram.getFileLink(
       ctx.message.animation.file_id,
     )
-    qqMsgQueue.addMessage({
+    await qqMsgQueue.addMessage({
       ...QQMsgQueue.extractTelegramInfo(ctx),
       type: 'video',
       data: {
@@ -200,7 +206,7 @@ export function qqBot(bot: Telegraf) {
         .join('')
         .trim()
       if (text.length > 0) {
-        tgMsgQueue.addMessage({
+        await tgMsgQueue.addMessage({
           ...(await TelegramMsgQueue.extractQQInfo(res)),
           type: 'text',
           data: text,
@@ -208,7 +214,7 @@ export function qqBot(bot: Telegraf) {
       }
 
       for (const video of videos) {
-        tgMsgQueue.addMessage({
+        await tgMsgQueue.addMessage({
           ...(await TelegramMsgQueue.extractQQInfo(res)),
           type: 'video',
           data: {
@@ -218,7 +224,7 @@ export function qqBot(bot: Telegraf) {
       }
 
       for (const gif of gifs) {
-        tgMsgQueue.addMessage({
+        await tgMsgQueue.addMessage({
           ...(await TelegramMsgQueue.extractQQInfo(res)),
           type: 'animation',
           data: {
@@ -228,7 +234,7 @@ export function qqBot(bot: Telegraf) {
       }
 
       for (const image of trueImages) {
-        tgMsgQueue.addMessage({
+        await tgMsgQueue.addMessage({
           ...(await TelegramMsgQueue.extractQQInfo(res)),
           type: 'image',
           data: {
@@ -244,7 +250,7 @@ export function qqBot(bot: Telegraf) {
       res.notice_type === 'group_recall' &&
       `${group_id}` === process.env.QQ_GROUP_ID
     ) {
-      tgMsgQueue.addMessage({
+      await tgMsgQueue.addMessage({
         ...(await TelegramMsgQueue.extractQQInfo(res)),
         type: 'recall',
         data: {
@@ -262,7 +268,7 @@ export function qqBot(bot: Telegraf) {
         return
       }
       if (/\.mp4$/i.test(res.file?.name)) {
-        tgMsgQueue.addMessage({
+        await tgMsgQueue.addMessage({
           ...(await TelegramMsgQueue.extractQQInfo(res)),
           type: 'video',
           data: {
@@ -271,7 +277,7 @@ export function qqBot(bot: Telegraf) {
         })
       }
       if (/\.(jpe?g|png|bmp)$/i.test(res.file?.name)) {
-        tgMsgQueue.addMessage({
+        await tgMsgQueue.addMessage({
           ...(await TelegramMsgQueue.extractQQInfo(res)),
           type: 'image',
           data: {
@@ -281,7 +287,7 @@ export function qqBot(bot: Telegraf) {
         })
       }
       // if (/\.gif$/i.test(res.file?.name)) {
-      //   tgMsgQueue.addMessage({
+      //   await tgMsgQueue.addMessage({
       //     ...(await TelegramMsgQueue.extractQQInfo(res)),
       //     type: 'animation',
       //     data: {

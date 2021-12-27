@@ -3,7 +3,7 @@ import path from 'path'
 import { Markup, Telegraf } from 'telegraf'
 
 import { EXHENTAI_API_TASK_PREFIX, EXHENTAI_DOWNLOADS } from '@/utils/consts'
-import * as redis from '@/utils/redis'
+import redis from '@/utils/redis'
 import { create7Zip } from '@/utils/zip'
 
 import {
@@ -96,7 +96,7 @@ export function exhentaiBot(bot: Telegraf) {
             disable_notification: true,
           },
         )
-        const task = await redis.hget(EXHENTAI_DOWNLOADS, `${gid}`)
+        const task = await redis.HGET(EXHENTAI_DOWNLOADS, `${gid}`)
         try {
           const data: DownloadTaskPayload = JSON.parse(task ?? '')
           const { msgId } = data
@@ -105,11 +105,11 @@ export function exhentaiBot(bot: Telegraf) {
           }
         } catch {}
 
-        await redis.hset([
+        await redis.HSET(
           EXHENTAI_DOWNLOADS,
           `${gid}`,
           JSON.stringify({ groupId, msgId: msg.message_id, meta }),
-        ])
+        )
         break
       }
     }
@@ -118,7 +118,7 @@ export function exhentaiBot(bot: Telegraf) {
 }
 
 export const task = async (bot: Telegraf) => {
-  const tasks = await redis.hgetall(EXHENTAI_DOWNLOADS)
+  const tasks = await redis.HGETALL(EXHENTAI_DOWNLOADS)
   const gids = Object.keys(tasks ?? {}).map((key) => parseInt(key))
 
   for (const gid of gids) {
@@ -137,7 +137,7 @@ export const task = async (bot: Telegraf) => {
     const list = fs.readdirSync(folderPath)
 
     if (list.includes('galleryinfo.txt')) {
-      await redis.hdel([EXHENTAI_DOWNLOADS, `${gid}`])
+      await redis.HDEL(EXHENTAI_DOWNLOADS, `${gid}`)
       if (groupId && msgId) {
         await bot.telegram.editMessageText(
           groupId,
@@ -152,7 +152,7 @@ export const task = async (bot: Telegraf) => {
           status: 'archiving',
           data: {},
         }
-        await redis.setex(
+        await redis.SETEX(
           `${EXHENTAI_API_TASK_PREFIX}${taskId}`,
           3600,
           JSON.stringify(taskInfo),
@@ -191,7 +191,7 @@ export const task = async (bot: Telegraf) => {
             url: `${process.env.EXHENTAI_SHORTEN_BASEURL}/${gid}/${meta.token}`,
           },
         }
-        await redis.setex(
+        await redis.SETEX(
           `${EXHENTAI_API_TASK_PREFIX}${taskId}`,
           3600,
           JSON.stringify(taskInfo),
@@ -216,7 +216,7 @@ export const task = async (bot: Telegraf) => {
             current: count,
           },
         }
-        await redis.setex(
+        await redis.SETEX(
           `${EXHENTAI_API_TASK_PREFIX}${taskId}`,
           3600,
           JSON.stringify(taskInfo),

@@ -2,7 +2,7 @@ import { Markup, Telegraf } from 'telegraf'
 
 import { delay } from '@/utils'
 import { TWITTER_SENT_LIST } from '@/utils/consts'
-import * as redis from '@/utils/redis'
+import redis from '@/utils/redis'
 
 import downloadTweetAll from './func/downloadTweetAll'
 import previewTweet from './func/previewTweet'
@@ -88,12 +88,12 @@ export function twitterBot(bot: Telegraf) {
 
 export const task = async (bot: Telegraf) => {
   const sent: number[] = JSON.parse(
-    (await redis.get(TWITTER_SENT_LIST)) ?? '[]',
+    (await redis.GET(TWITTER_SENT_LIST)) ?? '[]',
   )
   const likes = await getLikesByName(process.env.TWITTER_USER_ID ?? '').then(
     (res) => res.data.filter((e) => !sent.includes(parseInt(e.id))),
   )
-  await redis.set(
+  await redis.SET(
     TWITTER_SENT_LIST,
     JSON.stringify(
       Array.from(
