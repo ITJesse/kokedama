@@ -46,6 +46,12 @@ type TelegramMsgData =
         groupId: string
       }
     }
+  | {
+      type: 'recall'
+      data: {
+        msgId: number
+      }
+    }
 
 export type QQProfile = {
   title: string

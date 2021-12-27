@@ -48,3 +48,35 @@ export const getGroupMemberInfo = (user_id: number) =>
       user_id,
     })
     .then(({ data }) => data.data)
+
+export const getMsg = (msgId: number) =>
+  client
+    .post<
+      unknown,
+      CQHTTPResponse<{
+        message_id: number
+        real_id: number
+        time: number
+        message: any[]
+        raw_message: string
+        sender: {
+          age: number
+          area: string
+          card: string
+          level: string
+          nickname: string
+          role: string
+          sex: string
+          title: string
+          user_id: number
+        }
+      }>
+    >('/get_msg', {
+      message_id: msgId,
+    })
+    .then(({ data }) => data.data)
+
+export const deleteMsg = (msgId: number | string) =>
+  client.post<unknown, CQHTTPResponse<{}>>('/delete_msg', {
+    message_id: msgId,
+  })

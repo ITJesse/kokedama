@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { Context, Markup, Telegraf } from 'telegraf'
-import { Update, User } from 'telegraf/typings/core/types/typegram'
+import { InputFile, Update, User } from 'telegraf/typings/core/types/typegram'
 
 import { delay, getName, getProfilePhoto } from '@/utils'
 import { QQ_MSG_TO_TG_PREFIX, TG_MSG_TO_QQ_PREFIX } from '@/utils/consts'
@@ -113,6 +113,7 @@ export class TelegramMsgQueue extends MsgQueue<QQMessage> {
   }
 
   static extractQQInfo = async (msg: any): Promise<QQProfile & QQMsgId> => {
+    console.log(msg)
     if (msg.message_type === 'group' && msg.post_type === 'message') {
       const reply = msg.message.find((e: any) => e.type === 'reply')
       return Promise.resolve({
@@ -122,7 +123,7 @@ export class TelegramMsgQueue extends MsgQueue<QQMessage> {
         nickname: msg.sender.nickname,
       })
     }
-    if (msg.post_type === 'notice' && msg.notice_type === 'group_upload') {
+    if (msg.post_type === 'notice') {
       const { nickname, title } = await qq.getGroupMemberInfo(msg.user_id)
       return Promise.resolve({
         qqMsgId: msg.message_id,
@@ -154,6 +155,7 @@ export class TelegramMsgQueue extends MsgQueue<QQMessage> {
             [Markup.button.callback(`来自QQ的消息`, 'nop')],
           ]).reply_markup,
           reply_to_message_id: replyMsgId,
+          allow_sending_without_reply: true,
         },
       )
       telegramMsgId = message_id
@@ -188,33 +190,18 @@ export class TelegramMsgQueue extends MsgQueue<QQMessage> {
     if (msg.type === 'animation') {
       const { message_id } = await this.bot.telegram.sendAnimation(
         process.env.TELEGRAM_GROUP_ID ?? 0,
-        signUrl('/sample/upload.gif'),
+        msg.data.video,
         {
-          caption: `<b>${username}</b> 正在发送表情...`,
+          caption: `<b>${username}</b>`,
           parse_mode: 'HTML',
           reply_markup: Markup.inlineKeyboard([
             [Markup.button.callback(`来自QQ的消息`, 'nop')],
           ]).reply_markup,
           reply_to_message_id: replyMsgId,
+          allow_sending_without_reply: true,
         },
       )
       telegramMsgId = message_id
-      await this.bot.telegram.editMessageMedia(
-        process.env.TELEGRAM_GROUP_ID ?? 0,
-        message_id,
-        undefined,
-        {
-          type: 'video',
-          media: msg.data.video,
-          caption: `<b>${username}</b>`,
-          parse_mode: 'HTML',
-        },
-        {
-          reply_markup: Markup.inlineKeyboard([
-            [Markup.button.callback(`来自QQ的消息`, 'nop')],
-          ]).reply_markup,
-        },
-      )
     }
 
     if (msg.type === 'text') {
@@ -228,15 +215,27 @@ export class TelegramMsgQueue extends MsgQueue<QQMessage> {
             [Markup.button.callback(`来自QQ的消息`, 'nop')],
           ]).reply_markup,
           reply_to_message_id: replyMsgId,
+          allow_sending_without_reply: true,
         },
       )
       telegramMsgId = message_id
     }
 
     if (msg.type === 'image') {
+      let media: InputFile = {
+        url: msg.data.image,
+      }
+      if (msg.data.image.startsWith('http://')) {
+        const { data } = await axios.get(msg.data.image, {
+          responseType: 'arraybuffer',
+        })
+        media = {
+          source: Buffer.from(data),
+        }
+      }
       const { message_id } = await this.bot.telegram.sendPhoto(
         process.env.TELEGRAM_GROUP_ID ?? 0,
-        msg.data.image,
+        media,
         {
           caption: `<b>${username}</b>`,
           parse_mode: 'HTML',
@@ -244,9 +243,20 @@ export class TelegramMsgQueue extends MsgQueue<QQMessage> {
             [Markup.button.callback(`来自QQ的消息`, 'nop')],
           ]).reply_markup,
           reply_to_message_id: replyMsgId,
+          allow_sending_without_reply: true,
         },
       )
       telegramMsgId = message_id
+    }
+
+    if (msg.type === 'recall') {
+      const msgId = await redis.get(`${QQ_MSG_TO_TG_PREFIX}${msg.data.msgId}`)
+      if (msgId) {
+        await this.bot.telegram.deleteMessage(
+          process.env.TELEGRAM_GROUP_ID ?? 0,
+          parseInt(msgId),
+        )
+      }
     }
 
     if (telegramMsgId && msg.qqMsgId) {
