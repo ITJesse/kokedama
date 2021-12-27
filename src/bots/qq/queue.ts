@@ -98,7 +98,7 @@ export class QQMsgQueue {
 
     return {
       telegramMsgId: message.message_id,
-      replyToMsgId: (message as any).reply_to_message.message_id as
+      replyToMsgId: (message as any).reply_to_message?.message_id as
         | number
         | undefined,
       fromUser: message.from,
