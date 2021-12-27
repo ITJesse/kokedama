@@ -28,12 +28,6 @@ export const sendMessage = (message: string) =>
     })
     .then(({ data }) => data.data)
 
-export const replyMessage = (replyTo: number, message: string) =>
-  sendMessage(`[CQ:reply,id=${replyTo}]${message}`)
-
-export const sendImage = (imageUrl: string, message: string) =>
-  sendMessage(`[CQ:image,file=${imageUrl}]${message}`)
-
 export const getGroupMemberInfo = (user_id: number) =>
   client
     .post<

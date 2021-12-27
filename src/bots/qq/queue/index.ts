@@ -5,72 +5,14 @@ import { delay, getName, getProfilePhoto } from '@/utils'
 import { QQ_MSG_TO_TG_PREFIX, TG_MSG_TO_QQ_PREFIX } from '@/utils/consts'
 import * as redis from '@/utils/redis'
 
-import * as qq from './utils'
+import * as qq from '../utils'
+import { MsgQueue } from './base'
+import { TelegramImageData, TelegramMessage } from './types'
 
-type Profile = {
-  fromUser: User
-}
+export class TelegramMsgQueue extends MsgQueue<TelegramMessage> {
+  private imageGroup: { [key: string]: TelegramImageData[] } = {}
 
-type TelegramMsgId = {
-  telegramMsgId?: number
-  replyToMsgId?: number
-}
-
-type ImageData = {
-  groupId?: string
-  image: string
-  caption?: string
-  msgId: number
-}
-
-type MsgData =
-  | {
-      type: 'text'
-      data: string
-    }
-  | {
-      type: 'video'
-      data: {
-        video: string
-        caption?: string
-      }
-    }
-  | {
-      type: 'image'
-      data: ImageData
-    }
-  | {
-      type: 'image_group'
-      data: {
-        groupId: string
-      }
-    }
-
-type Message = TelegramMsgId & Profile & MsgData
-
-export class QQMsgQueue {
-  private bot: Telegraf
-  private queue: Message[] = []
-  private imageGroup: { [key: string]: ImageData[] } = {}
-
-  constructor(bot: Telegraf) {
-    this.bot = bot
-  }
-
-  public start() {
-    const send = async () => {
-      try {
-        await this.sendMessage()
-      } catch (err) {
-        console.error(err)
-      }
-      await delay(100)
-      send()
-    }
-    send()
-  }
-
-  public addMessage(msg: Message) {
+  public addMessage(msg: TelegramMessage) {
     if (msg.type === 'image' && msg.data.groupId) {
       const { groupId } = msg.data
       if (!this.imageGroup[groupId]) {
@@ -105,7 +47,7 @@ export class QQMsgQueue {
     }
   }
 
-  private async sendMessage() {
+  protected async sendMessage() {
     const msg = this.queue.shift()
     if (!msg) return
 

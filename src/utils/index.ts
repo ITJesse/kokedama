@@ -57,17 +57,3 @@ export const getProfilePhoto = async (bot: Telegraf, userId: number) => {
   }
   return imageUrl
 }
-
-export const sendImage = async (
-  bot: Telegraf,
-  chatId: string | number,
-  src: string,
-) => {
-  const { headers } = await axios.head(src)
-  const mime = headers['content-type']
-  if (mime.includes('gif')) {
-    await bot.telegram.sendAnimation(chatId, src)
-  } else {
-    await bot.telegram.sendPhoto(chatId, src)
-  }
-}

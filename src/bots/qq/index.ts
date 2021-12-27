@@ -6,12 +6,12 @@ import { resizeImage } from '@/utils'
 import { TG_MSG_TO_QQ_PREFIX } from '@/utils/consts'
 import * as redis from '@/utils/redis'
 
-import { QQMsgQueue } from './queue'
+import { TelegramMsgQueue } from './queue'
 import * as qq from './utils'
 
 export function qqBot(bot: Telegraf) {
-  const qqMsgQueue = new QQMsgQueue(bot)
-  qqMsgQueue.start()
+  const tgMsgQueue = new TelegramMsgQueue(bot)
+  tgMsgQueue.start()
 
   bot.on('text', async (ctx, next) => {
     const chatId = ctx.chat.id
@@ -22,8 +22,8 @@ export function qqBot(bot: Telegraf) {
       return next()
     }
 
-    qqMsgQueue.addMessage({
-      ...QQMsgQueue.extractTelegramInfo(ctx),
+    tgMsgQueue.addMessage({
+      ...TelegramMsgQueue.extractTelegramInfo(ctx),
       type: 'text',
       data: ctx.message.text,
     })
@@ -46,8 +46,8 @@ export function qqBot(bot: Telegraf) {
     })
     const buf = await resizeImage(data, { width: 128 })
 
-    qqMsgQueue.addMessage({
-      ...QQMsgQueue.extractTelegramInfo(ctx),
+    tgMsgQueue.addMessage({
+      ...TelegramMsgQueue.extractTelegramInfo(ctx),
       type: 'image',
       data: {
         image: `base64://${buf.toString('base64')}`,
@@ -65,14 +65,13 @@ export function qqBot(bot: Telegraf) {
     ) {
       return next()
     }
-    console.log(ctx.message)
     const imageUrl = await bot.telegram.getFileLink(
       ctx.message.photo.sort(
         (a, b) => b.width * b.height - a.width * a.height,
       )[0].file_id,
     )
-    qqMsgQueue.addMessage({
-      ...QQMsgQueue.extractTelegramInfo(ctx),
+    tgMsgQueue.addMessage({
+      ...TelegramMsgQueue.extractTelegramInfo(ctx),
       type: 'image',
       data: {
         image: imageUrl.href,
@@ -98,8 +97,8 @@ export function qqBot(bot: Telegraf) {
       return next()
     }
     const videoUrl = await bot.telegram.getFileLink(ctx.message.video.file_id)
-    qqMsgQueue.addMessage({
-      ...QQMsgQueue.extractTelegramInfo(ctx),
+    tgMsgQueue.addMessage({
+      ...TelegramMsgQueue.extractTelegramInfo(ctx),
       type: 'video',
       data: {
         video: videoUrl.href,
@@ -120,8 +119,8 @@ export function qqBot(bot: Telegraf) {
     const videoUrl = await bot.telegram.getFileLink(
       ctx.message.animation.file_id,
     )
-    qqMsgQueue.addMessage({
-      ...QQMsgQueue.extractTelegramInfo(ctx),
+    tgMsgQueue.addMessage({
+      ...TelegramMsgQueue.extractTelegramInfo(ctx),
       type: 'video',
       data: {
         video: videoUrl.href,
