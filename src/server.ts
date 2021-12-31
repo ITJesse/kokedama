@@ -2,6 +2,7 @@ import express from 'express'
 import morgan from 'morgan'
 
 import exhentaiApi from './bots/exhentai/api'
+import shortUrlApi from './bots/shortUrl/api'
 
 // API Server
 const app = express()
@@ -27,6 +28,7 @@ app.use('/api', (req, res, next) => {
   next()
 })
 app.use('/api', exhentaiApi)
+app.use('/api', shortUrlApi)
 
 app.listen(port, () => {
   console.log(`API server listening at http://localhost:${port}`)

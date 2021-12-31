@@ -1,0 +1,20 @@
+overwrite: true
+generates:
+  src/lib/gql/types.ts:
+    schema:
+      - ${GRAPHQL_ENDPOINT}:
+          headers:
+            x-hasura-admin-secret: ${GRAPHQL_ADMIN_SECRET}
+    documents: 'graphql/**/*.graphql'
+    config:
+      enumsAsTypes: true
+      scalars:
+        numeric: number
+        timestamptz: string
+    hooks:
+      afterOneFileWrite:
+        - prettier --write
+    plugins:
+      - 'typescript'
+      - 'typescript-operations'
+      - 'typescript-graphql-request'

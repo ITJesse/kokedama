@@ -3,7 +3,7 @@ import { pipe } from 'fp-ts/lib/function'
 import * as io from 'io-ts'
 import { v4 as uuidV4 } from 'uuid'
 
-import { E, TE } from '@/libs/fp'
+import { E, TE } from '@/lib/fp'
 import { EXHENTAI_API_TASK_PREFIX, EXHENTAI_DOWNLOADS } from '@/utils/consts'
 import redis from '@/utils/redis'
 

@@ -1,0 +1,14 @@
+query GetUrl($id: Int!) {
+  short_url_by_pk(id: $id) {
+    url
+  }
+}
+
+mutation AddUrl($url: String!) {
+  insert_short_url_one(
+    object: { url: $url }
+    on_conflict: { constraint: short_url_url_key, update_columns: url }
+  ) {
+    id
+  }
+}
