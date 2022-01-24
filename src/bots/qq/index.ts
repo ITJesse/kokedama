@@ -131,15 +131,19 @@ export function qqBot(bot: Telegraf) {
     ) {
       return next()
     }
-    const videoUrl = await bot.telegram.getFileLink(ctx.message.video.file_id)
-    await qqMsgQueue.addMessage({
-      ...QQMsgQueue.extractTelegramInfo(ctx),
-      type: 'video',
-      data: {
-        video: videoUrl.href,
-        caption: ctx.message.caption,
-      },
-    })
+    try {
+      const videoUrl = await bot.telegram.getFileLink(ctx.message.video.file_id)
+      await qqMsgQueue.addMessage({
+        ...QQMsgQueue.extractTelegramInfo(ctx),
+        type: 'video',
+        data: {
+          video: videoUrl.href,
+          caption: ctx.message.caption,
+        },
+      })
+    } catch (err) {
+      console.log(err)
+    }
     next()
   })
 
