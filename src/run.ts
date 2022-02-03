@@ -22,22 +22,6 @@ bot.use(async (ctx, next) => {
     console.info('Leave group', ctx.chat)
     return
   }
-  if (
-    `${ctx.senderChat?.id}` !== process.env.TELEGRAM_CHANNEL_ID &&
-    ctx.senderChat?.type === 'channel' &&
-    chatId
-  ) {
-    await ctx.telegram.deleteMessage(chatId, ctx.message?.message_id ?? 0)
-    const { message_id } = await ctx.telegram.sendMessage(
-      chatId,
-      '请不要用频道身份发言',
-    )
-    setTimeout(() => ctx.telegram.deleteMessage(chatId, message_id), 15000)
-    return
-  }
-  if (ctx.senderChat?.type === 'channel') {
-    return
-  }
   const start = Date.now()
   try {
     await next()
