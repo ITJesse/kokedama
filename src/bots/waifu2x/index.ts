@@ -11,7 +11,25 @@ export function waifuBot(bot: Telegraf) {
     const messageId = ctx.update.message.message_id
     const chatId = ctx.update.message.chat.id
     const replyToMsg = ctx.update.message.reply_to_message
-    if (!(replyToMsg as any)?.photo) {
+    let imageUrl: string
+    if ((replyToMsg as any)?.photo) {
+      imageUrl = (
+        await bot.telegram.getFileLink(
+          (replyToMsg as Message.PhotoMessage).photo.sort(
+            (a, b) => b.width * b.height - a.width * a.height,
+          )[0].file_id,
+        )
+      ).href
+    } else if (
+      (replyToMsg as any).document &&
+      (replyToMsg as any).document.mime_type.startsWith('image/')
+    ) {
+      imageUrl = (
+        await bot.telegram.getFileLink(
+          (replyToMsg as Message.DocumentMessage).document.file_id,
+        )
+      ).href
+    } else {
       const replyMsg = await bot.telegram.sendMessage(
         chatId,
         '请回复到一张图片',
@@ -25,12 +43,8 @@ export function waifuBot(bot: Telegraf) {
       }, 10000)
       return
     }
-    const imageUrl = await bot.telegram.getFileLink(
-      (replyToMsg as Message.PhotoMessage).photo.sort(
-        (a, b) => b.width * b.height - a.width * a.height,
-      )[0].file_id,
-    )
-    const { data } = await axios.get(imageUrl.href, {
+
+    const { data } = await axios.get(imageUrl, {
       responseType: 'arraybuffer',
     })
     const input = path.resolve('/tmp', randomUUID())
