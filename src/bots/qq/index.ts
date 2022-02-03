@@ -56,6 +56,9 @@ export function qqBot(bot: Telegraf) {
     ) {
       return next()
     }
+    if (ctx.message.text.startsWith('/')) {
+      return next()
+    }
 
     await qqMsgQueue.addMessage({
       ...QQMsgQueue.extractTelegramInfo(ctx),
