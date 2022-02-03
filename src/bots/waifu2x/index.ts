@@ -56,7 +56,7 @@ export function waifuBot(bot: Telegraf) {
     try {
       await execFile('waifu2x-converter-cpp', [
         '--block-size',
-        '512',
+        '256',
         '-m',
         'noise-scale',
         '--scale-ratio',
