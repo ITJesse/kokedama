@@ -119,11 +119,11 @@ export class QQMsgQueue extends MsgQueue<TelegramMessage> {
           `\n[CQ:image,file=${msg.data.image}]` +
           (msg.data.caption ? `\n${msg.data.caption}` : '')
       }
-      if (replyToMsgId) {
-        content = `[CQ:reply,id=${replyToMsgId}] ${content}`
-      }
-      const { message_id } = await qq.sendMessage(content)
-      qqMsgId = message_id
+      // if (replyToMsgId) {
+      //   content = `[CQ:reply,id=${replyToMsgId}] ${content}`
+      // }
+      const resp = await qq.sendMessage(content)
+      qqMsgId = resp?.message_id
     }
 
     if (msg.telegramMsgId && qqMsgId) {
