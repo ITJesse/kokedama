@@ -61,7 +61,7 @@ export function waifuBot(bot: Telegraf) {
         'noise-scale',
         '--scale-ratio',
         '2',
-        '--noise-level 0',
+        '--noise-level 1',
         '-i',
         input,
         '-o',
