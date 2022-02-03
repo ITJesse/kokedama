@@ -40,22 +40,19 @@ export function waifuBot(bot: Telegraf) {
       reply_to_message_id: messageId,
     })
     try {
-      await execFile(
-        '/Users/jesse/Github/waifu2x-converter-cpp/build/waifu2x-converter-cpp',
-        [
-          '--block-size',
-          '512',
-          '-m',
-          'noise-scale',
-          '--scale-ratio',
-          '2',
-          '--noise-level 0',
-          '-i',
-          input,
-          '-o',
-          output,
-        ],
-      )
+      await execFile('waifu2x-converter-cpp', [
+        '--block-size',
+        '512',
+        '-m',
+        'noise-scale',
+        '--scale-ratio',
+        '2',
+        '--noise-level 0',
+        '-i',
+        input,
+        '-o',
+        output,
+      ])
       await bot.telegram.sendDocument(
         chatId,
         {
