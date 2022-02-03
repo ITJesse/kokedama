@@ -4,3 +4,4 @@ templates/*.txt
 .env
 .DS_Store
 disk
+models
