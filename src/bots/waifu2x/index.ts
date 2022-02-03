@@ -21,8 +21,8 @@ export function waifuBot(bot: Telegraf) {
         )
       ).href
     } else if (
-      (replyToMsg as any).document &&
-      (replyToMsg as any).document.mime_type.startsWith('image/')
+      (replyToMsg as any)?.document &&
+      (replyToMsg as any)?.document.mime_type.startsWith('image/')
     ) {
       imageUrl = (
         await bot.telegram.getFileLink(
