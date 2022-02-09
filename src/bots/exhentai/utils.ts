@@ -100,7 +100,7 @@ export const fmtFolderName = (title: string, gid: number) =>
     .replace(/\|/g, '')
     .replace(/&#039;/g, "'")
     .replace(/&amp;/g, '&')
-    .replace(/  /g, ' ')
+    .replace(/\s{2,}/g, ' ')
     .replace(/\?/g, '')
     .replace(/:/g, '')
 
