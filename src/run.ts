@@ -7,6 +7,7 @@ import { qqBot } from './bots/qq'
 import { saucenaoBot } from './bots/saucenao'
 import { twitterBot } from './bots/twitter'
 import { waifuBot } from './bots/waifu2x'
+import { handleQueneEvent } from './bots/waifu2x/queue'
 import scheduler from './scheduler'
 
 const bot = new Telegraf(process.env.BOT_TOKEN ?? '')
@@ -78,6 +79,8 @@ exhentaiBot(bot)
 saucenaoBot(bot)
 qqBot(bot)
 waifuBot(bot)
+
+handleQueneEvent(bot)
 
 scheduler(bot)
 
