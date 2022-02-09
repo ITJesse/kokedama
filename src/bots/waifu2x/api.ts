@@ -1,11 +1,9 @@
 import { Router } from 'express'
 import { pipe } from 'fp-ts/lib/function'
 import * as io from 'io-ts'
-import { v4 as uuidV4 } from 'uuid'
+import { crypto } from 'mz'
 
 import { E, TE } from '@/lib/fp'
-import { EXHENTAI_API_TASK_PREFIX, EXHENTAI_DOWNLOADS } from '@/utils/consts'
-import redis from '@/utils/redis'
 
 import { waifuQueue } from './queue'
 
@@ -24,11 +22,12 @@ router.post('/new_task', async (req, res) => {
     return res.status(400).json({ success: false, message: 'bad input' })
   }
   const { imageUrl } = query.right
+  const jobId = crypto.createHash('md5').update(imageUrl).digest('hex')
 
   const job = await waifuQueue.add(
     'waifu2x_image',
     { imageUrl },
-    { removeOnComplete: 3000, removeOnFail: 3000 },
+    { removeOnComplete: 1000, removeOnFail: true, jobId, attempts: 1 },
   )
   res.json({ success: true, taskId: job.id })
 })
@@ -46,17 +45,16 @@ router.get('/:taskId', async (req, res) => {
   }
   const { taskId } = query.right
 
-  let task: DownloadTaskPayload | null = null
-  try {
-    task = JSON.parse(
-      (await redis.GET(`${EXHENTAI_API_TASK_PREFIX}${taskId}`)) ?? '',
-    )
-  } catch {}
-  if (!task) {
+  const job = await waifuQueue.getJob(taskId)
+  if (!job)
     return res.status(404).json({ success: false, message: 'task not found' })
-  }
 
-  res.json({ success: true, data: task })
+  const status = await job.getState()
+
+  if (status === 'completed') {
+    return res.json(job.returnvalue)
+  }
+  return res.json({ success: true, status })
 })
 
 export default router

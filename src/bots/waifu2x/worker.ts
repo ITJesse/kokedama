@@ -34,6 +34,7 @@ new Worker(
     }
 
     const { width, height } = await sharp(input).metadata()
+    console.log(width, height)
     if (!width || !height || width >= 4096 || height >= 4096) {
       return { success: false, message: '原图大小已经超过4K了' }
     }

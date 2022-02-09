@@ -46,7 +46,7 @@ export function waifuBot(bot: Telegraf) {
     const job = await waifuQueue.add(
       'waifu2x_image',
       { imageUrl },
-      { removeOnComplete: 100, removeOnFail: 100, jobId },
+      { removeOnComplete: 1000, removeOnFail: true, jobId, attempts: 1 },
     )
     const processingMsg = await bot.telegram.sendMessage(chatId, '处理中...', {
       reply_to_message_id: messageId,
