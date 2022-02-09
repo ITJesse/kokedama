@@ -7,7 +7,7 @@ import os from 'os'
 import path from 'path'
 import sharp from 'sharp'
 
-import { signUrl, uploadBuf } from '@/utils/oss'
+import { signUrl, store, uploadBuf } from '@/utils/oss'
 
 import { connection } from './queue'
 
@@ -65,7 +65,7 @@ new Worker(
       fs.unlinkSync(output)
 
       console.log('done waifu2x', imageUrl)
-      return { success: true, url: signUrl(fileKey, undefined) }
+      return { success: true, url: store.generateObjectUrl(fileKey) }
     } catch (err) {
       return { success: false, message: err }
     }
