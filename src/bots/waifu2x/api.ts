@@ -52,7 +52,7 @@ router.get('/:taskId', async (req, res) => {
   const status = await job.getState()
 
   if (status === 'completed') {
-    return res.json(job.returnvalue)
+    return res.json({ ...job.returnvalue, status })
   }
   return res.json({ success: true, status })
 })
