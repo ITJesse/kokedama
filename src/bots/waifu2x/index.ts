@@ -62,7 +62,9 @@ export function waifuBot(bot: Telegraf) {
         300000,
       )
       if (!success) {
-        await bot.telegram.sendMessage(chatId, message)
+        await bot.telegram.sendMessage(chatId, message, {
+          reply_to_message_id: messageId,
+        })
         return
       }
       await bot.telegram.sendDocument(chatId, url, {
