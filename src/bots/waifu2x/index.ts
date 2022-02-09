@@ -59,7 +59,7 @@ export function waifuBot(bot: Telegraf) {
     try {
       const { success, message, url } = await job.waitUntilFinished(
         queueEvents,
-        60000,
+        300000,
       )
       if (!success) {
         await bot.telegram.sendMessage(chatId, message)
