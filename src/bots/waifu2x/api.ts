@@ -28,7 +28,7 @@ router.post('/new_task', async (req, res) => {
     'waifu2x_image',
     { imageUrl },
     {
-      removeOnComplete: { age: 300 * 1000 },
+      removeOnComplete: 10000,
       removeOnFail: { age: 15 * 1000 },
       jobId,
       attempts: 1,

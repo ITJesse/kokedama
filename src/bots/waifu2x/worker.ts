@@ -65,7 +65,7 @@ new Worker(
       fs.unlinkSync(output)
 
       console.log('done waifu2x', imageUrl)
-      return { success: true, url: signUrl(fileKey, undefined, 300) }
+      return { success: true, url: signUrl(fileKey, undefined) }
     } catch (err) {
       return { success: false, message: err }
     }
