@@ -2,7 +2,7 @@ import crypto from 'crypto'
 import { Telegraf } from 'telegraf'
 import { Message } from 'telegraf/typings/core/types/typegram'
 
-import { waifuQueue } from './queue'
+import { queueEvents, waifuQueue } from './queue'
 
 export function waifuBot(bot: Telegraf) {
   bot.command('waifu2x', async (ctx) => {
@@ -41,19 +41,11 @@ export function waifuBot(bot: Telegraf) {
       }, 10000)
       return
     }
-    const processingMsg = await bot.telegram.sendMessage(chatId, '处理中...', {
-      reply_to_message_id: messageId,
-    })
 
     const jobId = crypto.createHash('md5').update(imageUrl).digest('hex')
-    await waifuQueue.add(
+    const job = await waifuQueue.add(
       'waifu2x_image',
-      {
-        imageUrl,
-        processingMsgId: processingMsg.message_id,
-        messageId,
-        chatId,
-      },
+      { imageUrl },
       {
         removeOnComplete: 10000,
         removeOnFail: { age: 15 * 1000 },
@@ -61,5 +53,25 @@ export function waifuBot(bot: Telegraf) {
         attempts: 1,
       },
     )
+    const processingMsg = await bot.telegram.sendMessage(chatId, '处理中...', {
+      reply_to_message_id: messageId,
+    })
+    try {
+      const { success, message, url } = await job.waitUntilFinished(
+        queueEvents,
+        300000,
+      )
+      if (!success) {
+        await bot.telegram.sendMessage(chatId, message)
+        return
+      }
+      await bot.telegram.sendDocument(chatId, url, {
+        reply_to_message_id: messageId,
+      })
+    } catch (err) {
+      await bot.telegram.sendMessage(chatId, `${err}`)
+    } finally {
+      await bot.telegram.deleteMessage(chatId, processingMsg.message_id)
+    }
   })
 }
