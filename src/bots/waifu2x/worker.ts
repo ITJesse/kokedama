@@ -1,4 +1,3 @@
-import axios from 'axios'
 import { Worker } from 'bullmq'
 import { randomUUID } from 'crypto'
 import fs from 'fs'

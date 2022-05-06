@@ -2,11 +2,8 @@ import fs from 'fs'
 import path from 'path'
 import { Telegraf } from 'telegraf'
 
-import { GROUP_MEMBER_PREFIX } from '@/utils/consts'
-import * as redis from '@/utils/redis'
-
 const welcom = fs
-  .readFileSync(path.resolve(__dirname, '../../templates/welcome.txt'))
+  .readFileSync(path.resolve(__dirname, '../../../templates/welcome.txt'))
   .toString()
 
 export function groupBot(bot: Telegraf) {

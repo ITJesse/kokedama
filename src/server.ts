@@ -2,6 +2,7 @@ import express from 'express'
 import morgan from 'morgan'
 
 import exhentaiApi from './bots/exhentai/api'
+import groupApi from './bots/group/api'
 import shortUrlApi from './bots/shortUrl/api'
 import waifu2xApi from './bots/waifu2x/api'
 
@@ -31,6 +32,7 @@ app.use('/api', (req, res, next) => {
 app.use('/api', exhentaiApi)
 app.use('/api', shortUrlApi)
 app.use('/api/waifu2x', waifu2xApi)
+app.use('/api/group', groupApi)
 
 app.listen(port, () => {
   console.log(`API server listening at http://localhost:${port}`)
