@@ -5,8 +5,6 @@ import { Logger } from 'telegram/extensions'
 import { LogLevel } from 'telegram/extensions/Logger'
 import { StringSession } from 'telegram/sessions'
 
-import { delay } from '@/utils'
-
 const apiId = parseInt(process.env.TELEGRAM_APP_ID ?? '')
 const apiHash = process.env.TELEGRAM_APP_HASH ?? ''
 
@@ -28,11 +26,6 @@ let loging = false
 
 const init = async (): Promise<TelegramClient> => {
   if (client) return client
-  if (loging) {
-    await delay(100)
-    return init()
-  }
-  loging = true
   prompt.start()
   console.log('Connecting...')
   const _client = new TelegramClient(stringSession, apiId, apiHash, {
