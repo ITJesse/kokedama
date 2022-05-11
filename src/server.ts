@@ -5,6 +5,7 @@ import exhentaiApi from './bots/exhentai/api'
 import groupApi from './bots/group/api'
 import shortUrlApi from './bots/shortUrl/api'
 import waifu2xApi from './bots/waifu2x/api'
+import woocommerceApi from './bots/woocommerce/api'
 
 // API Server
 const app = express()
@@ -33,6 +34,8 @@ app.use('/api', exhentaiApi)
 app.use('/api', shortUrlApi)
 app.use('/api/waifu2x', waifu2xApi)
 app.use('/api/group', groupApi)
+
+app.use('/webhook/woocommerce', woocommerceApi)
 
 app.listen(port, () => {
   console.log(`API server listening at http://localhost:${port}`)
