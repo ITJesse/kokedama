@@ -13,6 +13,7 @@ const WooCommerceRouter = (bot: Telegraf) => {
 金额：${total} ${currency}
 @ITJesse`,
         {
+          parse_mode: 'HTML',
           reply_markup: Markup.inlineKeyboard([
             [
               Markup.button.callback(

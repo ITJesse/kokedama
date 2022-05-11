@@ -19,9 +19,10 @@ export function exhentaiBot(bot: Telegraf) {
     switch (cmd) {
       case 'woocommerce_confirm_order': {
         const orderId = params[0]
-        await wooApi.put(`orders/${orderId}`, {
+        const { data } = await wooApi.put(`orders/${orderId}`, {
           status: 'completed',
         })
+        console.log(data)
         if (msgId) {
           await ctx.deleteMessage(msgId)
         }
