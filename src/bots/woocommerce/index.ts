@@ -4,6 +4,11 @@ import wooApi from '@/lib/woocommerce'
 
 export function woocommerceBot(bot: Telegraf) {
   bot.on('callback_query', async (ctx, next) => {
+    const fromUserId = ctx.update.callback_query.from.id
+
+    if (`${fromUserId}` !== process.env.TELEGRAM_ADMIN_ID) {
+      return next()
+    }
     const groupId = ctx.update.callback_query.message?.chat.id
     const msgId = ctx.update.callback_query.message?.message_id
     if (!('data' in ctx.update.callback_query)) {
@@ -23,7 +28,6 @@ export function woocommerceBot(bot: Telegraf) {
         const { data } = await wooApi.put(`orders/${orderId}`, {
           status: 'completed',
         })
-        console.log(data)
         if (msgId) {
           await ctx.deleteMessage(msgId)
         }
