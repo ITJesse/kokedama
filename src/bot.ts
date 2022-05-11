@@ -7,6 +7,7 @@ import { qqBot } from './bots/qq'
 import { saucenaoBot } from './bots/saucenao'
 import { twitterBot } from './bots/twitter'
 import { waifuBot } from './bots/waifu2x'
+import { woocommerceBot } from './bots/woocommerce'
 import scheduler from './scheduler'
 
 export const startBot = () => {
@@ -79,6 +80,7 @@ export const startBot = () => {
   saucenaoBot(bot)
   qqBot(bot)
   waifuBot(bot)
+  woocommerceBot(bot)
 
   scheduler(bot)
 

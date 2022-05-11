@@ -2,7 +2,7 @@ import { Telegraf } from 'telegraf'
 
 import wooApi from '@/lib/woocommerce'
 
-export function exhentaiBot(bot: Telegraf) {
+export function woocommerceBot(bot: Telegraf) {
   bot.on('callback_query', async (ctx, next) => {
     const groupId = ctx.update.callback_query.message?.chat.id
     const msgId = ctx.update.callback_query.message?.message_id
