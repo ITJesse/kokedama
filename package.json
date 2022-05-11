@@ -13,6 +13,7 @@
   "license": "ISC",
   "dependencies": {
     "7zip-bin": "^5.1.1",
+    "@woocommerce/woocommerce-rest-api": "^1.0.1",
     "ali-oss": "^6.15.2",
     "axios": "^0.21.1",
     "big-integer": "^1.6.51",
@@ -64,6 +65,7 @@
     "@types/redis": "^4.0.11",
     "@types/sharp": "^0.29.4",
     "@types/uuid": "^8.3.1",
+    "@types/woocommerce__woocommerce-rest-api": "^1.0.2",
     "@types/ws": "^8.2.1",
     "nodemon": "^2.0.7",
     "prettier": "^2.5.1",
