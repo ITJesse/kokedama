@@ -15,6 +15,7 @@ export function exhentaiBot(bot: Telegraf) {
     }
     const cmd = data.split('|')[0]
     const params = data.split('|')[1]?.split(',')
+    console.log(cmd, params)
 
     switch (cmd) {
       case 'woocommerce_confirm_order': {
