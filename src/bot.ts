@@ -3,7 +3,6 @@ import { Telegraf } from 'telegraf'
 import { exhentaiBot } from './bots/exhentai'
 import { groupBot } from './bots/group'
 import { infoBot } from './bots/info'
-import { qqBot } from './bots/qq'
 import { saucenaoBot } from './bots/saucenao'
 import { twitterBot } from './bots/twitter'
 import { waifuBot } from './bots/waifu2x'
@@ -78,7 +77,6 @@ export const startBot = () => {
   infoBot(bot)
   exhentaiBot(bot)
   saucenaoBot(bot)
-  qqBot(bot)
   waifuBot(bot)
   woocommerceBot(bot)
 
