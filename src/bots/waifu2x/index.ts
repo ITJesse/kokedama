@@ -33,6 +33,7 @@ export function waifuBot(bot: Telegraf) {
         '请回复到一张图片',
         {
           reply_to_message_id: messageId,
+          allow_sending_without_reply: true,
         },
       )
       setTimeout(() => {
@@ -55,6 +56,7 @@ export function waifuBot(bot: Telegraf) {
     )
     const processingMsg = await bot.telegram.sendMessage(chatId, '处理中...', {
       reply_to_message_id: messageId,
+      allow_sending_without_reply: true,
     })
     try {
       const { success, message, url } = await job.waitUntilFinished(
@@ -64,11 +66,13 @@ export function waifuBot(bot: Telegraf) {
       if (!success) {
         await bot.telegram.sendMessage(chatId, message, {
           reply_to_message_id: messageId,
+          allow_sending_without_reply: true,
         })
         return
       }
       await bot.telegram.sendDocument(chatId, url, {
         reply_to_message_id: messageId,
+        allow_sending_without_reply: true,
       })
     } catch (err) {
       await bot.telegram.sendMessage(chatId, `${err}`)
