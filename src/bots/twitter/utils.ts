@@ -22,8 +22,9 @@ export const getTweetById = async (id: string) => {
   const { data } = await twitterApi.get(`/2/tweets/${id}`, {
     params: {
       expansions: 'attachments.media_keys,author_id',
+      'tweet.fields': 'id',
       'user.fields': 'name,username,url',
-      'media.fields': 'url,preview_image_url',
+      'media.fields': 'url,preview_image_url,variants',
     },
   })
   return data

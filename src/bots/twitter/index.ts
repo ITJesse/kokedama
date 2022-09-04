@@ -5,6 +5,7 @@ import { TWITTER_SENT_LIST } from '@/utils/consts'
 import redis from '@/utils/redis'
 
 import downloadTweetAll from './func/downloadTweetAll'
+import downloadTweetVideo from './func/downloadTweetVideo'
 import previewTweet from './func/previewTweet'
 import previewTweetAll from './func/previewTweetAll'
 import { getLikesByName } from './utils'
@@ -33,7 +34,7 @@ export function twitterBot(bot: Telegraf) {
                 ),
                 Markup.button.callback(
                   '下载原图',
-                  `download_tweet_all|${tweetId},${messageId}`,
+                  `download_tweet_images|${tweetId},${messageId}`,
                 ),
               ],
             ]).reply_markup,
@@ -74,14 +75,24 @@ export function twitterBot(bot: Telegraf) {
         await previewTweetAll(bot, tweetId, groupId, replyMsgId)
         break
       }
-      case 'download_tweet_all': {
+      case 'download_tweet_images': {
         const tweetId = params[0]
         const replyMsgId = parseInt(params[1])
         await downloadTweetAll(bot, tweetId, groupId, replyMsgId)
         break
       }
+      case 'download_tweet_video': {
+        const tweetId = params[0]
+        const replyMsgId = parseInt(params[1])
+        await downloadTweetVideo(bot, tweetId, groupId, replyMsgId)
+        break
+      }
     }
-    await ctx.answerCbQuery('Done')
+    try {
+      await ctx.answerCbQuery('Done')
+    } catch (err) {
+      console.error(err)
+    }
     next()
   })
 }

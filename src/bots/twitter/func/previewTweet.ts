@@ -2,6 +2,7 @@ import axios from 'axios'
 import { Context, Markup, Telegraf } from 'telegraf'
 
 import { getTweetById, getTweetUrl, getUserUrl } from '../utils'
+import previewTweetVideo from './previewTweetVideo'
 
 export default async function previewTweet(
   bot: Telegraf,
@@ -17,8 +18,12 @@ export default async function previewTweet(
   const images = tweet.includes?.media?.map(
     (e: any) => e.url ?? e.preview_image_url,
   )
-  const content = `${tweet.data.text}`
+  const video = tweet.includes?.media?.find(
+    (e: any) => e.type === 'video' || e.type === 'animated_gif',
+  )
+  if (video) return previewTweetVideo(bot, tweet, chatId, replyMsgId)
 
+  const content = `${tweet.data.text}`
   if (!images) {
     bot.telegram.sendMessage(chatId, content, {
       parse_mode: 'HTML',
@@ -58,7 +63,7 @@ export default async function previewTweet(
           [
             Markup.button.callback(
               `下载原图（共${images.length}张）`,
-              `download_tweet_all|${tweetId},${replyMsgId}`,
+              `download_tweet_images|${tweetId},${replyMsgId}`,
             ),
           ],
           [
@@ -78,7 +83,7 @@ export default async function previewTweet(
     if (imageBufs.length > 1) {
       bot.telegram.sendMediaGroup(
         chatId,
-        imageBufs.map((e) => ({
+        imageBufs.slice(1).map((e) => ({
           type: 'photo',
           media: { source: e },
         })),

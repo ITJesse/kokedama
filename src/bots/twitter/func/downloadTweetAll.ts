@@ -2,6 +2,7 @@ import axios from 'axios'
 import { Telegraf } from 'telegraf'
 
 import { getOrigImgUrl, getTweetById } from '../utils'
+import downloadTweetVideo from './downloadTweetVideo'
 
 export default async function downloadTweetAll(
   bot: Telegraf,
@@ -11,6 +12,11 @@ export default async function downloadTweetAll(
 ) {
   const tweet = await getTweetById(tweetId)
   const images = tweet.includes.media?.map((e: any) => getOrigImgUrl(e.url))
+  const video = tweet.includes?.media?.find(
+    (e: any) => e.type === 'video' || e.type === 'animated_gif',
+  )
+  if (video) return downloadTweetVideo(bot, tweet, chatId, replyMsgId)
+
   if (images) {
     const imageBufs: Buffer[] = await Promise.all(
       images.map((e: any) =>
