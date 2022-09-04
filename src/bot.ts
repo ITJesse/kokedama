@@ -1,5 +1,7 @@
 import { Telegraf } from 'telegraf'
 
+import redis from '@/utils/redis'
+
 import { exhentaiBot } from './bots/exhentai'
 import { groupBot } from './bots/group'
 import { infoBot } from './bots/info'
@@ -8,6 +10,7 @@ import { twitterBot } from './bots/twitter'
 import { waifuBot } from './bots/waifu2x'
 import { woocommerceBot } from './bots/woocommerce'
 import scheduler from './scheduler'
+import { CMD_DEBOUNCE_PREFIX } from './utils/consts'
 
 export const startBot = () => {
   const bot = new Telegraf(process.env.BOT_TOKEN ?? '')
@@ -46,6 +49,11 @@ export const startBot = () => {
     if (!data || !groupId) {
       return next()
     }
+
+    const cmdTriggered = await redis.get(`${CMD_DEBOUNCE_PREFIX}${data}`)
+    if (cmdTriggered) return
+    await redis.setEx(`${CMD_DEBOUNCE_PREFIX}${data}`, 10, '1')
+
     const cmd = data.split('|')[0]
     const params = data.split('|')[1]?.split(',')
     switch (cmd) {

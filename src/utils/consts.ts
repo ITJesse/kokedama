@@ -11,3 +11,5 @@ export const QQMSG_QUEUE = 'QQ_MSGQUEUE'
 export const TGMSG_QUEUE = 'TG_MSGQUEUE'
 
 export const MEDIA_GROUP_PREFIX = 'MEDIA_GROUP_'
+
+export const CMD_DEBOUNCE_PREFIX = 'CMD_DEBOUNCE:'
