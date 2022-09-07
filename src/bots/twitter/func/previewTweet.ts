@@ -29,6 +29,7 @@ export default async function previewTweet(
       parse_mode: 'HTML',
       disable_web_page_preview: true,
       disable_notification: true,
+      allow_sending_without_reply: false,
       reply_markup: Markup.inlineKeyboard([
         [
           Markup.button.url(
@@ -59,6 +60,7 @@ export default async function previewTweet(
         parse_mode: 'HTML',
         disable_notification: true,
         reply_to_message_id: replyMsgId,
+        allow_sending_without_reply: false,
         reply_markup: Markup.inlineKeyboard([
           [
             Markup.button.callback(
@@ -90,6 +92,7 @@ export default async function previewTweet(
         {
           reply_to_message_id: replyMsgId,
           disable_notification: true,
+          allow_sending_without_reply: false,
         },
       )
     }

@@ -26,6 +26,7 @@ export function twitterBot(bot: Telegraf) {
             disable_notification: true,
             reply_to_message_id: messageId,
             parse_mode: 'MarkdownV2',
+            allow_sending_without_reply: false,
             reply_markup: Markup.inlineKeyboard([
               [
                 Markup.button.callback(

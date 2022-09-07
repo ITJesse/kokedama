@@ -34,6 +34,7 @@ export default async function downloadTweetAll(
       {
         reply_to_message_id: replyMsgId,
         disable_notification: true,
+        allow_sending_without_reply: false,
       },
     )
   }
