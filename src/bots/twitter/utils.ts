@@ -7,17 +7,6 @@ const twitterApi = axios.create({
   },
 })
 
-export const getLikesByName = async (userId: string) => {
-  const { data } = await twitterApi.get<{
-    data: { id: string; text: string }[]
-  }>(`/2/users/${userId}/liked_tweets`, {
-    params: {
-      max_results: 20,
-    },
-  })
-  return data
-}
-
 export const getTweetById = async (id: string) => {
   const { data } = await twitterApi.get(`/2/tweets/${id}`, {
     params: {
