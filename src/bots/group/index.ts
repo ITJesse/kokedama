@@ -17,7 +17,7 @@ export function groupBot(bot: Telegraf) {
       ?.filter((m) => !m.is_bot)
       .forEach(async (m) => {
         const username = m.username
-          ? `@${m.username.replace(/_/g, '\\_')}`
+          ? `\@${m.username.replace(/_/g, '\\_')}`
           : `[${m.last_name} ${m.first_name}](tg://user?id=${m.id})`
         const msg = welcom.replace('{username}', username)
         if (`${groupId}` === process.env.TELEGRAM_GROUP_ID) {
