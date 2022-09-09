@@ -1,4 +1,4 @@
-import { Queue, QueueEvents, RedisConnection } from 'bullmq'
+import { Queue, QueueEvents } from 'bullmq'
 
 export const connection = {
   host: 'localhost',

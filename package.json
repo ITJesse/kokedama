@@ -25,10 +25,8 @@
     "file-type": "^16.3.0",
     "form-data": "^4.0.0",
     "fp-ts": "^2.11.5",
-    "gm": "^1.23.1",
     "graphql": "^15.5.0",
     "graphql-request": "^3.4.0",
-    "hashids": "^2.2.10",
     "io-ts": "^2.2.16",
     "is-url": "^1.2.4",
     "limiter": "^2.1.0",
@@ -44,8 +42,7 @@
     "telegraf": "^4.8.1",
     "telegram": "^2.7.12",
     "tslib": "^2.1.0",
-    "uuid": "^8.3.2",
-    "ws": "^8.3.0"
+    "uuid": "^8.3.2"
   },
   "devDependencies": {
     "@graphql-codegen/cli": "1.17.0",
@@ -55,7 +52,6 @@
     "@graphql-codegen/typescript-operations": "1.17.0",
     "@types/ali-oss": "^6.0.8",
     "@types/express": "^4.17.13",
-    "@types/gm": "^1.18.10",
     "@types/is-url": "^1.2.30",
     "@types/morgan": "^1.9.3",
     "@types/mz": "^2.7.4",
@@ -66,12 +62,10 @@
     "@types/sharp": "^0.29.4",
     "@types/uuid": "^8.3.1",
     "@types/woocommerce__woocommerce-rest-api": "^1.0.2",
-    "@types/ws": "^8.2.1",
     "nodemon": "^2.0.7",
     "prettier": "^2.5.1",
     "ts-node": "^10.0.0",
     "tsconfig-paths": "^3.9.0",
-    "twitter-d": "^0.4.0",
     "typescript": "^4.4.0"
   },
   "_moduleAliases": {

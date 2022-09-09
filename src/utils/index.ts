@@ -1,59 +1,38 @@
-import axios from 'axios'
-import gm, { ResizeOption } from 'gm'
-import { Telegraf } from 'telegraf'
-
-import { fileKeyExists, signUrl, uploadWithPath } from './oss'
+import assert from 'assert'
+import crypto from 'crypto'
+import fs from 'fs'
+import { execFile } from 'mz/child_process'
+import ObjectID64 from 'objectid64'
 
 export const delay = (ms: number) => new Promise((res) => setTimeout(res, ms))
 
-export const getName = ({
-  first_name,
-  last_name,
-  username,
-}: {
-  first_name: string
-  last_name?: string
-  username?: string
-}) => {
-  const name = [first_name, last_name].filter((e) => !!e).join(' ') ?? username
-  return name
-}
+const encoder = ObjectID64()
+export const getVideoDimensions = (buf: Buffer) => {
+  const hash = encoder.encode(
+    crypto.createHash('md5').update(buf).digest('hex'),
+  )
+  const filePath = '/tmp/' + hash + '.mp4'
+  fs.writeFileSync(filePath, buf)
 
-export const resizeImage = (
-  image: Buffer,
-  size: { width: number; height?: number; opt?: ResizeOption },
-): Promise<Buffer> => {
-  return new Promise((resolve, reject) => {
-    gm(image)
-      .resize(size.width, size.height, size.opt)
-      .units('undefined')
-      .density(0, 0)
-      .toBuffer('png', (err, buf) => {
-        if (err) return reject(err)
-        resolve(buf)
-      })
+  return execFile('ffprobe', [
+    '-v',
+    'error',
+    '-of',
+    'flat=s=_',
+    '-select_streams',
+    'v:0',
+    '-show_entries',
+    'stream=height,width',
+    filePath,
+  ]).then(function (out) {
+    var stdout = out[0].toString()
+    var width = /width=(\d+)/.exec(stdout)
+    var height = /height=(\d+)/.exec(stdout)
+    assert(width && height, 'No dimensions found!')
+    fs.unlink(filePath, () => undefined)
+    return {
+      width: parseInt(width[1]),
+      height: parseInt(height[1]),
+    }
   })
-}
-
-export const getProfilePhoto = async (bot: Telegraf, userId: number) => {
-  let imageUrl = 'https://dummyimage.com/1x1/000/fff'
-  const fileKey = `/profile/photo/${userId}_32.jpg`
-  if (await fileKeyExists(fileKey)) {
-    return signUrl(fileKey)
-  }
-
-  const { photos } = await bot.telegram.getUserProfilePhotos(userId, 0, 1)
-  const profilePhoto = photos[0]?.sort(
-    (a, b) => a.width * a.height - b.width * b.height,
-  )[0].file_id
-  if (profilePhoto) {
-    const photoUrl = await bot.telegram.getFileLink(profilePhoto)
-    const { data } = await axios.get(photoUrl.href, {
-      responseType: 'arraybuffer',
-    })
-    const buf = await resizeImage(Buffer.from(data), { width: 32, height: 32 })
-    await uploadWithPath(fileKey, buf)
-    imageUrl = signUrl(fileKey)
-  }
-  return imageUrl
 }

@@ -4,7 +4,6 @@ import { Telegraf } from 'telegraf'
 
 import exhentaiApi from './bots/exhentai/api'
 import groupApi from './bots/group/api'
-import shortUrlApi from './bots/shortUrl/api'
 import waifu2xApi from './bots/waifu2x/api'
 import WooCommerceRouter from './bots/woocommerce/api'
 
@@ -34,7 +33,6 @@ export const startApiServer = (bot: Telegraf) => {
     next()
   })
   app.use('/api', exhentaiApi)
-  app.use('/api', shortUrlApi)
   app.use('/api/waifu2x', waifu2xApi)
   app.use('/api/group', groupApi)
 

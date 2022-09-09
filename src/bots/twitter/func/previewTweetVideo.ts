@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { Markup, Telegraf } from 'telegraf'
 
-import { getVideoDimensions } from '@/bots/qq/utils'
+import { getVideoDimensions } from '@/utils'
 import { signUrl } from '@/utils/oss'
 
 import { getTweetById, getTweetUrl, getUserUrl } from '../utils'
