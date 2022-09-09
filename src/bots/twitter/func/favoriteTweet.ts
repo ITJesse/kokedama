@@ -20,6 +20,7 @@ export const favoriteTweet = async (
     const msg = await bot.telegram.sendMessage(
       groupId,
       `${username} 请先私聊我 /bind_twitter 命令绑定 Twitter 账号`,
+      { parse_mode: 'MarkdownV2' },
     )
     setTimeout(() => bot.telegram.deleteMessage(groupId, msg.message_id), 15000)
     return
