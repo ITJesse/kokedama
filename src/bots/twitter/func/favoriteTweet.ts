@@ -13,7 +13,7 @@ export const favoriteTweet = async (
   const token = await getUserToken(tgUser.id)
   if (!token) {
     const username = tgUser.username
-      ? `@${tgUser.username.replace(/_/g, '\\_')}`
+      ? `\@${tgUser.username}`
       : `[${tgUser.last_name ?? ''} ${tgUser.first_name ?? ''}](tg://user?id=${
           tgUser.id
         })`
