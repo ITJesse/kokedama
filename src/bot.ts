@@ -20,7 +20,11 @@ export const startBot = () => {
 
   bot.use(async (ctx, next) => {
     const chatId = ctx.chat?.id
-    if (chatId && !ALLOWED_GROUP.includes(chatId)) {
+    if (
+      chatId &&
+      !ALLOWED_GROUP.includes(chatId) &&
+      ctx.chat?.type !== 'private'
+    ) {
       try {
         await ctx.telegram.leaveChat(chatId)
       } catch {}
@@ -52,7 +56,7 @@ export const startBot = () => {
 
     const cmdTriggered = await redis.get(`${CMD_DEBOUNCE_PREFIX}${data}`)
     if (cmdTriggered) return
-    await redis.setEx(`${CMD_DEBOUNCE_PREFIX}${data}`, 10, '1')
+    await redis.setex(`${CMD_DEBOUNCE_PREFIX}${data}`, 10, '1')
 
     const cmd = data.split('|')[0]
     const params = data.split('|')[1]?.split(',')

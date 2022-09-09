@@ -26,6 +26,10 @@ export default async function previewTweetVideo(
           `下载视频`,
           `download_tweet_video|${tweetId},${replyMsgId}`,
         ),
+        Markup.button.callback(
+          `❤️ 喜欢`,
+          `favorite_tweet|${tweetId},${replyMsgId}`,
+        ),
       ],
       [
         Markup.button.url(

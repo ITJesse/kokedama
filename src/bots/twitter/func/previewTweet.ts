@@ -33,6 +33,12 @@ export default async function previewTweet(
       allow_sending_without_reply: false,
       reply_markup: Markup.inlineKeyboard([
         [
+          Markup.button.callback(
+            `❤️ 喜欢`,
+            `favorite_tweet|${tweetId},${replyMsgId}`,
+          ),
+        ],
+        [
           Markup.button.url(
             `作者：${tweet.includes.users[0].name}`,
             getUserUrl(tweet.includes.users[0].username),
@@ -63,6 +69,10 @@ export default async function previewTweet(
             Markup.button.callback(
               `下载原图（共${images.length}张）`,
               `download_tweet_images|${tweetId},${replyMsgId}`,
+            ),
+            Markup.button.callback(
+              `❤️ 喜欢`,
+              `favorite_tweet|${tweetId},${replyMsgId}`,
             ),
           ],
           [

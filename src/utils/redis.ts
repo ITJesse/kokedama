@@ -1,7 +1,8 @@
-import { createClient } from 'redis'
+import Redis from 'ioredis'
 
-const client = createClient()
-client.on('error', (err) => console.log('Redis Client Error', err))
-client.connect()
+const redisClient = new Redis({
+  host: '127.0.0.1',
+  port: 6379,
+})
 
-export default client
+export default redisClient

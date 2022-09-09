@@ -81,7 +81,7 @@ router.post('/download', async (req, res) => {
 
   let task: DownloadTaskPayload | null = null
   try {
-    task = JSON.parse((await redis.HGET(EXHENTAI_DOWNLOADS, `${gid}`)) ?? '')
+    task = JSON.parse((await redis.hget(EXHENTAI_DOWNLOADS, `${gid}`)) ?? '')
   } catch {}
 
   if (task && task.taskId) {
@@ -89,7 +89,7 @@ router.post('/download', async (req, res) => {
   }
 
   const taskId = uuidV4()
-  await redis.HSET(
+  await redis.hset(
     EXHENTAI_DOWNLOADS,
     `${gid}`,
     JSON.stringify({ meta, taskId }),
@@ -102,7 +102,7 @@ router.post('/download', async (req, res) => {
       current: 0,
     },
   }
-  await redis.SETEX(
+  await redis.setex(
     `${EXHENTAI_API_TASK_PREFIX}${taskId}`,
     3600,
     JSON.stringify(status),
@@ -127,7 +127,7 @@ router.get('/download/:taskId', async (req, res) => {
   let task: DownloadTaskPayload | null = null
   try {
     task = JSON.parse(
-      (await redis.GET(`${EXHENTAI_API_TASK_PREFIX}${taskId}`)) ?? '',
+      (await redis.get(`${EXHENTAI_API_TASK_PREFIX}${taskId}`)) ?? '',
     )
   } catch {}
   if (!task) {
