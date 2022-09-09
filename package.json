@@ -6,7 +6,6 @@
   "scripts": {
     "start": "node -r dotenv/config -r module-alias/register dist/bootstrap.js",
     "dev": "nodemon src/bootstrap.ts",
-    "gql-codegen": "graphql-codegen -r dotenv/config",
     "build": "rm -rf dist && tsc"
   },
   "author": "",
@@ -27,8 +26,6 @@
     "file-type": "^16.3.0",
     "form-data": "^4.0.0",
     "fp-ts": "^2.11.5",
-    "graphql": "^15.5.0",
-    "graphql-request": "^3.4.0",
     "io-ts": "^2.2.16",
     "ioredis": "^5.2.3",
     "is-url": "^1.2.4",
@@ -48,11 +45,6 @@
     "uuid": "^8.3.2"
   },
   "devDependencies": {
-    "@graphql-codegen/cli": "1.17.0",
-    "@graphql-codegen/introspection": "1.17.0",
-    "@graphql-codegen/typescript": "1.17.0",
-    "@graphql-codegen/typescript-graphql-request": "^1.17.0",
-    "@graphql-codegen/typescript-operations": "1.17.0",
     "@types/ali-oss": "^6.0.8",
     "@types/connect-redis": "^0.0.18",
     "@types/express": "^4.17.13",
