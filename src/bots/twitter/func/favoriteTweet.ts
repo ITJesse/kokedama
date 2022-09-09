@@ -13,14 +13,14 @@ export const favoriteTweet = async (
   const token = await getUserToken(tgUser.id)
   if (!token) {
     const username = tgUser.username
-      ? `\@${tgUser.username}`
-      : `[${tgUser.last_name ?? ''} ${tgUser.first_name ?? ''}](tg://user?id=${
-          tgUser.id
-        })`
+      ? `@${tgUser.username}`
+      : `<a href="tg://user?id=${tgUser.id}">${tgUser.last_name ?? ''} ${
+          tgUser.first_name ?? ''
+        }</a>`
     const msg = await bot.telegram.sendMessage(
       groupId,
       `${username} 请先私聊我 /bind_twitter 命令绑定 Twitter 账号`,
-      { parse_mode: 'MarkdownV2' },
+      { parse_mode: 'HTML' },
     )
     setTimeout(() => bot.telegram.deleteMessage(groupId, msg.message_id), 15000)
     return
