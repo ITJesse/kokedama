@@ -130,8 +130,9 @@ export function twitterBot(bot: Telegraf) {
       allow_sending_without_reply: true,
       reply_markup:
         process.env.NODE_ENV === 'production'
-          ? Markup.inlineKeyboard([[Markup.button.url('前往绑定', url)]])
-              .reply_markup
+          ? Markup.inlineKeyboard([
+              [Markup.button.url('前往绑定', `${process.env.BASE_URL}${url}`)],
+            ]).reply_markup
           : undefined,
     })
     next()
