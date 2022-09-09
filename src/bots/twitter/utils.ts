@@ -50,10 +50,10 @@ export const getUserToken = async (telegramId: number) => {
   let user = obj.user
 
   if (tokenSet.expired()) {
-    const newTokenSet = await oauthClient.refresh(tokenSet)
+    const newTokenSet = await oauthClient.refresh(tokenSet.refresh_token ?? '')
     const { data } = await axios.get('https://api.twitter.com/2/users/me', {
       headers: {
-        Authorization: `Bearer ${tokenSet?.access_token}`,
+        Authorization: `Bearer ${newTokenSet.access_token}`,
       },
     })
     await redis.set(
