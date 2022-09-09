@@ -1,6 +1,8 @@
 import axios from 'axios'
 import { Telegraf } from 'telegraf'
 
+import { multipartDownload } from '@/utils'
+
 import { getTweetById } from '../utils'
 
 export default async function previewTweetAll(
@@ -13,11 +15,7 @@ export default async function previewTweetAll(
   const images = tweet.includes.media?.map((e: any) => e.url)
   if (images) {
     const imageBufs: Buffer[] = await Promise.all(
-      images.map((e: any) =>
-        axios
-          .get(e, { responseType: 'arraybuffer' })
-          .then(({ data }) => Buffer.from(data)),
-      ),
+      images.map((e: any) => multipartDownload(e)),
     )
     bot.telegram.sendMediaGroup(
       chatId,

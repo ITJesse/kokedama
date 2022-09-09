@@ -1,6 +1,7 @@
 import assert from 'assert'
 import crypto from 'crypto'
 import fs from 'fs'
+import MultipartDownload from 'multipart-download'
 import { execFile } from 'mz/child_process'
 import ObjectID64 from 'objectid64'
 
@@ -36,3 +37,24 @@ export const getVideoDimensions = (buf: Buffer) => {
     }
   })
 }
+
+export const multipartDownload = (url: string): Promise<Buffer> =>
+  new Promise((resolve, reject) => {
+    let dataLen = 0
+    const startTime = Date.now()
+    new MultipartDownload()
+      .start(url, {
+        numOfConnections: 5,
+        writeToBuffer: true,
+      })
+      .on('data', (data) => {
+        dataLen += data.length
+      })
+      .on('end', (data) => {
+        const duration = Date.now() - startTime
+        const speed = dataLen / 1024 / (duration / 1000)
+        console.log('speed:', speed.toFixed(1), 'kB/s')
+        resolve(data)
+      })
+      .on('error', (err) => reject(err))
+  })

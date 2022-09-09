@@ -1,7 +1,6 @@
-import axios from 'axios'
 import { Markup, Telegraf } from 'telegraf'
 
-import { getVideoDimensions } from '@/utils'
+import { getVideoDimensions, multipartDownload } from '@/utils'
 import { signUrl } from '@/utils/oss'
 
 import { getTweetById, getTweetUrl, getUserUrl } from '../utils'
@@ -56,12 +55,8 @@ export default async function previewTweetVideo(
     const videoUrl = tweet.includes.media[0].variants
       .filter((e: any) => e.content_type === 'video/mp4')
       .sort((a: any, b: any) => b.bit_rate - a.bit_rate)[0].url
-    const videoBuf = await axios
-      .get(videoUrl, {
-        responseType: 'arraybuffer',
-      })
-      .then(({ data }) => Buffer.from(data))
-    const { width, height } = await getVideoDimensions(Buffer.from(videoBuf))
+    const videoBuf = await multipartDownload(videoUrl)
+    const { width, height } = await getVideoDimensions(videoBuf)
     await bot.telegram.editMessageMedia(
       chatId,
       message_id,
@@ -69,7 +64,7 @@ export default async function previewTweetVideo(
       {
         type: 'video',
         media: {
-          source: Buffer.from(videoBuf),
+          source: videoBuf,
           filename: `${tweetId}_video.mp4`,
         },
         caption: `${tweet.data.text}`,

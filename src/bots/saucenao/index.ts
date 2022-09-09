@@ -1,5 +1,6 @@
-import axios from 'axios'
 import { Telegraf } from 'telegraf'
+
+import { multipartDownload } from '@/utils'
 
 import { search } from './utils'
 
@@ -15,10 +16,7 @@ export function saucenaoBot(bot: Telegraf) {
         (a, b) => b.width * b.height - a.width * a.height,
       )[1].file_id,
     )
-    const { data } = await axios.get(imageUrl.href, {
-      responseType: 'arraybuffer',
-      timeout: 10000,
-    })
+    const data = await multipartDownload(imageUrl.href)
     const result = (
       await search(data, {
         results: 20,

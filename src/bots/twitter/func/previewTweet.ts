@@ -1,5 +1,6 @@
-import axios from 'axios'
-import { Context, Markup, Telegraf } from 'telegraf'
+import { Markup, Telegraf } from 'telegraf'
+
+import { multipartDownload } from '@/utils'
 
 import { getTweetById, getTweetUrl, getUserUrl } from '../utils'
 import previewTweetVideo from './previewTweetVideo'
@@ -45,11 +46,7 @@ export default async function previewTweet(
     })
   } else {
     const imageBufs: Buffer[] = await Promise.all(
-      images.map((e: any) =>
-        axios
-          .get(e, { responseType: 'arraybuffer' })
-          .then(({ data }) => Buffer.from(data)),
-      ),
+      images.map((e: any) => multipartDownload(e)),
     )
 
     bot.telegram.sendPhoto(

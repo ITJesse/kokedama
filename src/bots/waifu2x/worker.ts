@@ -1,12 +1,12 @@
 import { Worker } from 'bullmq'
 import { randomUUID } from 'crypto'
 import fs from 'fs'
-import MultipartDownload from 'multipart-download'
 import { execFile } from 'mz/child_process'
 import os from 'os'
 import path from 'path'
 import sharp from 'sharp'
 
+import { multipartDownload } from '@/utils'
 import { store, uploadBuf } from '@/utils/oss'
 
 import { connection } from './queue'
@@ -15,27 +15,6 @@ const binaryPath =
   os.platform() === 'darwin'
     ? '/Users/jesse/Github/waifu2x-converter-cpp/build/waifu2x-converter-cpp'
     : 'waifu2x-converter-cpp'
-
-const downloadImage = (imageUrl: string): Promise<Buffer> =>
-  new Promise((resolve, reject) => {
-    let dataLen = 0
-    const startTime = Date.now()
-    new MultipartDownload()
-      .start(imageUrl, {
-        numOfConnections: 5,
-        writeToBuffer: true,
-      })
-      .on('data', (data) => {
-        dataLen += data.length
-      })
-      .on('end', (data) => {
-        const duration = Date.now() - startTime
-        const speed = dataLen / 1024 / (duration / 1000)
-        console.log('speed:', speed.toFixed(1), 'kB/s')
-        resolve(data)
-      })
-      .on('error', (err) => reject(err))
-  })
 
 new Worker(
   'waifu2x',
@@ -46,7 +25,7 @@ new Worker(
     const output = path.resolve('/tmp', `${randomUUID()}.png`)
 
     try {
-      const data = await downloadImage(imageUrl)
+      const data = await multipartDownload(imageUrl)
       fs.writeFileSync(input, data)
     } catch (err) {
       return { success: false, message: '下载图片失败' }

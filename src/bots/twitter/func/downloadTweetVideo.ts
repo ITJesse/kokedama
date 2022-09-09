@@ -1,5 +1,6 @@
-import axios from 'axios'
 import { Telegraf } from 'telegraf'
+
+import { multipartDownload } from '@/utils'
 
 import { getTweetById } from '../utils'
 
@@ -21,16 +22,12 @@ export default async function downloadTweetVideo(
     const videoUrl = tweet.includes.media[0].variants
       .filter((e: any) => e.content_type === 'video/mp4')
       .sort((a: any, b: any) => b.bit_rate - a.bit_rate)[0].url
-    const videoBuf = await axios
-      .get(videoUrl, {
-        responseType: 'arraybuffer',
-      })
-      .then(({ data }) => Buffer.from(data))
+    const videoBuf = await multipartDownload(videoUrl)
     await bot.telegram.sendDocument(
       chatId,
       {
         filename: `${tweetId}_video.mp4`,
-        source: Buffer.from(videoBuf),
+        source: videoBuf,
       },
       {
         reply_to_message_id: replyMsgId,
