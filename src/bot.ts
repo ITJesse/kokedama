@@ -5,7 +5,6 @@ import redis from '@/utils/redis'
 import { exhentaiBot } from './bots/exhentai'
 import { groupBot } from './bots/group'
 import { infoBot } from './bots/info'
-import { saucenaoBot } from './bots/saucenao'
 import { twitterBot } from './bots/twitter'
 import { waifuBot } from './bots/waifu2x'
 import { woocommerceBot } from './bots/woocommerce'
@@ -88,7 +87,7 @@ export const startBot = () => {
   groupBot(bot)
   infoBot(bot)
   exhentaiBot(bot)
-  saucenaoBot(bot)
+  // saucenaoBot(bot)
   waifuBot(bot)
   woocommerceBot(bot)
 
