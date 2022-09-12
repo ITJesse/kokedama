@@ -1,4 +1,5 @@
 import { Markup, Telegraf } from 'telegraf'
+import { Message } from 'telegraf/typings/core/types/typegram'
 
 import { randomStr } from '@/utils'
 import { TWITTER_BIND_SESSION_PREFIX, TWITTER_TOKEN_PREFIX } from '@/utils/consts'
@@ -12,12 +13,12 @@ import previewTweetAll from './func/previewTweetAll'
 
 export function twitterBot(bot: Telegraf) {
   bot.hears(
-    /https:\/\/twitter\.com\/(\w+)\/status\/(\d+)/,
+    /http(s)?:\/\/(mobile\.)?twitter\.com\/(\w+)\/status\/(\d+)/,
     async (ctx, next) => {
       const groupId = ctx.update.message.chat.id
       const messageId = ctx.update.message.message_id
       if (ctx.match && groupId) {
-        const tweetId = ctx.match[2]
+        const tweetId = ctx.match[4]
         // const tweet = await getTweetById(tweetId)
         const msg = await ctx.tg.sendMessage(
           groupId,
@@ -43,7 +44,7 @@ export function twitterBot(bot: Telegraf) {
         )
         setTimeout(async () => {
           try {
-            await ctx.tg.deleteMessage(msg.chat.id, msg.message_id)
+            await ctx.telegram.deleteMessage(msg.chat.id, msg.message_id)
           } catch {}
         }, 30000)
       }
@@ -105,6 +106,47 @@ export function twitterBot(bot: Telegraf) {
       console.error(err)
     }
     next()
+  })
+
+  bot.command('like', async (ctx, next) => {
+    if (!ctx.message.reply_to_message) {
+      const msg = await ctx.reply('请回复给一条包含推文链接的消息')
+      setTimeout(
+        () => bot.telegram.deleteMessage(msg.chat.id, msg.message_id),
+        15000,
+      )
+      return
+    }
+    const groupId = ctx.update.message.chat.id
+    let text = ''
+    if ((ctx.message.reply_to_message as Message.TextMessage)?.text) {
+      text = (ctx.message.reply_to_message as Message.TextMessage).text
+    } else if (
+      (ctx.message.reply_to_message as Message.MediaMessage)?.caption
+    ) {
+      text =
+        (ctx.message.reply_to_message as Message.MediaMessage).caption ?? ''
+    } else {
+      const msg = await ctx.reply('请回复给一条包含推文链接的消息')
+      setTimeout(
+        () => bot.telegram.deleteMessage(msg.chat.id, msg.message_id),
+        15000,
+      )
+      return
+    }
+    const tweetId = text.match(
+      /http(s)?:\/\/(mobile\.)?twitter\.com\/(\w+)\/status\/(\d+)/,
+    )?.[4]
+    if (tweetId) {
+      await favoriteTweet(bot, ctx.update.message.from, tweetId, groupId)
+    } else {
+      const msg = await ctx.reply('请回复给一条包含推文链接的消息')
+      setTimeout(
+        () => bot.telegram.deleteMessage(msg.chat.id, msg.message_id),
+        15000,
+      )
+      return
+    }
   })
 
   bot.command('bind_twitter', async (ctx, next) => {

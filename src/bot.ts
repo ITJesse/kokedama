@@ -63,7 +63,7 @@ export const startBot = () => {
     switch (cmd) {
       case 'cancel_and_remove': {
         try {
-          ctx.tg.deleteMessage(
+          ctx.telegram.deleteMessage(
             groupId,
             ctx.update.callback_query?.message?.message_id ?? 0,
           )
@@ -72,7 +72,7 @@ export const startBot = () => {
       }
       case 'remove_message': {
         try {
-          await ctx.tg.deleteMessage(groupId, parseInt(params[0]))
+          await ctx.telegram.deleteMessage(groupId, parseInt(params[0]))
         } catch {}
         break
       }
@@ -93,6 +93,29 @@ export const startBot = () => {
   woocommerceBot(bot)
 
   scheduler(bot)
+
+  bot.telegram.setMyCommands([
+    {
+      command: 'info',
+      description: '获取用户 ID 和群组 ID',
+    },
+    {
+      command: 'waifu2x',
+      description: '图片超分辨率',
+    },
+    {
+      command: 'like',
+      description: '收藏推文',
+    },
+    {
+      command: 'bind_twitter',
+      description: '绑定推特账号（仅限私聊）',
+    },
+    {
+      command: 'unbind_twitter',
+      description: '解绑推特账号（仅限私聊）',
+    },
+  ])
 
   bot.launch()
   console.log('Bot started.')
