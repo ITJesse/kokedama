@@ -8,7 +8,6 @@ import { Telegraf } from 'telegraf'
 import redis from '@/utils/redis'
 
 import exhentaiApi from './bots/exhentai/api'
-import groupApi from './bots/group/api'
 import twitterApi from './bots/twitter/api'
 import waifu2xApi from './bots/waifu2x/api'
 import WooCommerceRouter from './bots/woocommerce/api'
@@ -74,7 +73,6 @@ export const startApiServer = (bot: Telegraf) => {
   })
   app.use('/api', exhentaiApi)
   app.use('/api/waifu2x', waifu2xApi)
-  app.use('/api/group', groupApi)
 
   app.use('/webhook/woocommerce', woocommerceApi)
 
