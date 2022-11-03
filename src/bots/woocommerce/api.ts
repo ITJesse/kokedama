@@ -8,7 +8,7 @@ const WooCommerceRouter = (bot: Telegraf) => {
     const { payment_method, total, currency, id } = req.body
     if (payment_method === 'codepay_wx') {
       bot.telegram.sendMessage(
-        parseInt(process.env.TELEGRAM_GROUP_ID ?? ''),
+        parseInt(process.env.TELEGRAM_ADMIN_ID ?? ''),
         `<b>收到微信支付订单</b>
 金额：${total} ${currency}
 @ITJesse`,
