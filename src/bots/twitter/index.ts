@@ -1,5 +1,5 @@
 import { Markup, Telegraf } from 'telegraf'
-import { Message } from 'telegraf/typings/core/types/typegram'
+import { Message, MessageEntity } from 'telegraf/typings/core/types/typegram'
 
 import { randomStr } from '@/utils'
 import { TWITTER_BIND_SESSION_PREFIX, TWITTER_TOKEN_PREFIX } from '@/utils/consts'
@@ -109,8 +109,12 @@ export function twitterBot(bot: Telegraf) {
   })
 
   bot.command('like', async (ctx, next) => {
+    console.log(JSON.stringify(ctx.message.reply_to_message, null, 2))
     if (!ctx.message.reply_to_message) {
-      const msg = await ctx.reply('请回复给一条包含推文链接的消息')
+      const msg = await ctx.sendMessage('请回复给一条包含推文链接的消息', {
+        reply_to_message_id: ctx.message.message_id,
+        allow_sending_without_reply: false,
+      })
       setTimeout(
         () => bot.telegram.deleteMessage(msg.chat.id, msg.message_id),
         15000,
@@ -118,34 +122,54 @@ export function twitterBot(bot: Telegraf) {
       return
     }
     const groupId = ctx.update.message.chat.id
-    let text = ''
-    if ((ctx.message.reply_to_message as Message.TextMessage)?.text) {
-      text = (ctx.message.reply_to_message as Message.TextMessage).text
-    } else if (
-      (ctx.message.reply_to_message as Message.MediaMessage)?.caption
-    ) {
-      text =
-        (ctx.message.reply_to_message as Message.MediaMessage).caption ?? ''
+
+    let tweetLinks: string[] = []
+    if ((ctx.message.reply_to_message as Message.TextMessage)?.entities) {
+      const urls = (
+        ctx.message.reply_to_message as Message.TextMessage
+      ).entities?.filter(
+        (e) => e.type === 'text_link',
+      ) as MessageEntity.TextLinkMessageEntity[]
+      tweetLinks = urls
+        .map((e) => e.url)
+        .filter((e) =>
+          /http(s)?:\/\/(mobile\.|v[a-z])?twitter\.com\/(\w+)\/status\/(\d+)/.test(
+            e,
+          ),
+        )
     } else {
-      const msg = await ctx.reply('请回复给一条包含推文链接的消息')
+      let text = ''
+      if ((ctx.message.reply_to_message as Message.TextMessage)?.text) {
+        text = (ctx.message.reply_to_message as Message.TextMessage).text
+      } else if (
+        (ctx.message.reply_to_message as Message.MediaMessage)?.caption
+      ) {
+        text =
+          (ctx.message.reply_to_message as Message.MediaMessage).caption ?? ''
+      }
+      tweetLinks =
+        text.match(
+          /http(s)?:\/\/(mobile\.|v[a-z])?twitter\.com\/(\w+)\/status\/(\d+)/g,
+        ) ?? []
+    }
+    if (tweetLinks.length === 0) {
+      const msg = await ctx.sendMessage('请回复给一条包含推文链接的消息', {
+        reply_to_message_id: ctx.message.message_id,
+        allow_sending_without_reply: false,
+      })
       setTimeout(
         () => bot.telegram.deleteMessage(msg.chat.id, msg.message_id),
         15000,
       )
       return
     }
-    const tweetId = text.match(
-      /http(s)?:\/\/(mobile\.)?twitter\.com\/(\w+)\/status\/(\d+)/,
-    )?.[4]
-    if (tweetId) {
-      await favoriteTweet(bot, ctx.update.message.from, tweetId, groupId)
-    } else {
-      const msg = await ctx.reply('请回复给一条包含推文链接的消息')
-      setTimeout(
-        () => bot.telegram.deleteMessage(msg.chat.id, msg.message_id),
-        15000,
-      )
-      return
+    for (const tweetLink of Array.from(new Set(tweetLinks))) {
+      const tweetId = tweetLink.match(
+        /http(s)?:\/\/(mobile\.|v[a-z])?twitter\.com\/(\w+)\/status\/(\d+)/,
+      )?.[4]
+      if (tweetId) {
+        await favoriteTweet(bot, ctx.update.message.from, tweetId, groupId)
+      }
     }
   })
 
