@@ -94,6 +94,8 @@ export function exhentaiBot(bot: Telegraf) {
           {
             parse_mode: 'HTML',
             disable_notification: true,
+            reply_to_message_id: ctx.update.callback_query.message?.message_id,
+            allow_sending_without_reply: true,
           },
         )
         const task = await redis.hget(EXHENTAI_DOWNLOADS, `${gid}`)
@@ -108,7 +110,12 @@ export function exhentaiBot(bot: Telegraf) {
         await redis.hset(
           EXHENTAI_DOWNLOADS,
           `${gid}`,
-          JSON.stringify({ groupId, msgId: msg.message_id, meta }),
+          JSON.stringify({
+            groupId,
+            msgId: msg.message_id,
+            replyToMsgId: ctx.update.callback_query.message?.message_id,
+            meta,
+          }),
         )
         break
       }
@@ -122,9 +129,8 @@ export const task = async (bot: Telegraf) => {
   const gids = Object.keys(tasks ?? {}).map((key) => parseInt(key))
 
   for (const gid of gids) {
-    const { meta, groupId, msgId, taskId }: DownloadTaskPayload = JSON.parse(
-      tasks[gid],
-    )
+    const { meta, groupId, msgId, taskId, replyToMsgId }: DownloadTaskPayload =
+      JSON.parse(tasks[gid])
     const title = meta.title_jpn ? meta.title_jpn : meta.title
     const folderName = fmtFolderName(title, gid)
     const folderPath = path.join(
@@ -181,6 +187,8 @@ export const task = async (bot: Telegraf) => {
                 `${process.env.EXHENTAI_NFS_BASEURL}/${filepath}`,
               ),
             ]).reply_markup,
+            reply_to_message_id: replyToMsgId,
+            allow_sending_without_reply: true,
           },
         )
       }

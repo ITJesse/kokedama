@@ -31,6 +31,7 @@ export default async function previewTweet(
       disable_web_page_preview: true,
       disable_notification: true,
       allow_sending_without_reply: false,
+      reply_to_message_id: replyMsgId,
       reply_markup: Markup.inlineKeyboard([
         [
           Markup.button.callback(

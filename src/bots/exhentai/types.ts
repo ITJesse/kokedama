@@ -37,6 +37,7 @@ export type DownloadTaskPayload = {
   groupId?: number
   msgId?: number
   taskId?: string
+  replyToMsgId?: number
   meta: GalleryMeta
 }
 
