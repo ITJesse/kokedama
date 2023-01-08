@@ -137,21 +137,21 @@ export function twitterBot(bot: Telegraf) {
             e,
           ),
         )
-    } else {
-      let text = ''
-      if ((ctx.message.reply_to_message as Message.TextMessage)?.text) {
-        text = (ctx.message.reply_to_message as Message.TextMessage).text
-      } else if (
-        (ctx.message.reply_to_message as Message.MediaMessage)?.caption
-      ) {
-        text =
-          (ctx.message.reply_to_message as Message.MediaMessage).caption ?? ''
-      }
-      tweetLinks =
-        text.match(
-          /http(s)?:\/\/(mobile\.|v[a-z])?twitter\.com\/(\w+)\/status\/(\d+)/g,
-        ) ?? []
     }
+    let text = ''
+    if ((ctx.message.reply_to_message as Message.TextMessage)?.text) {
+      text = (ctx.message.reply_to_message as Message.TextMessage).text
+    } else if (
+      (ctx.message.reply_to_message as Message.MediaMessage)?.caption
+    ) {
+      text =
+        (ctx.message.reply_to_message as Message.MediaMessage).caption ?? ''
+    }
+    tweetLinks.push(
+      ...(text.match(
+        /http(s)?:\/\/(mobile\.|v[a-z])?twitter\.com\/(\w+)\/status\/(\d+)/g,
+      ) ?? []),
+    )
     if (tweetLinks.length === 0) {
       const msg = await ctx.sendMessage('请回复给一条包含推文链接的消息', {
         reply_to_message_id: ctx.message.message_id,
